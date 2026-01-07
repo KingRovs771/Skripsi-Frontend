@@ -15,7 +15,7 @@ export default function LoginPage() {
       {' '}
       {/* <-- Perubahan di sini */}
       <CardHeader>
-        <CardTitle className="text-2xl">Login</CardTitle>
+        <CardTitle className="text-2xl">Login Guru BK</CardTitle>
         <CardDescription>Masukkan email Anda di bawah ini untuk login ke akun Anda</CardDescription>
       </CardHeader>
       <CardContent>
@@ -31,25 +31,10 @@ export default function LoginPage() {
                 Lupa password?
               </Link>
             </div>
-            <Input id="password" type="password" placeholder="*********" required />
+            <Input id="password" type="password" required />
           </div>
           <Button type="submit" className="w-full">
             Login
-          </Button>
-          <Button variant="outline" className="w-full">
-            <Link href="/auth/login/admin" className="">
-              Login Sebagai Admin
-            </Link>
-          </Button>
-          <Button variant="outline" className="w-full">
-            <Link href="/auth/login/pakar" className="">
-              Login Sebagai Pakar
-            </Link>
-          </Button>
-          <Button variant="outline" className="w-full">
-            <Link href="/auth/login/gurubk" className="">
-              Login Sebagai Guru BK
-            </Link>
           </Button>
         </div>
         <div className="mt-4 text-center text-sm">

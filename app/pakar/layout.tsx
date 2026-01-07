@@ -2,25 +2,26 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Newspaper, FileText, Users, LogOut, School, ShieldCheck, ChevronRight, ChevronDown } from 'lucide-react';
+import { LayoutDashboard, Newspaper, FileText, Users, LogOut, Database, MessageCircleQuestionMark, ChevronDown, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 function AdminSidebar() {
   const pathname = usePathname();
-  const [isUserOpen, setIsUserOpen] = useState(false); // State untuk dropdown pengguna
+  // State untuk mengontrol dropdown Manajemen Basis Pengetahuan
+  const [isBasisDataOpen, setIsBasisDataOpen] = useState(false);
+  const [isQuestionOpen, setIsQuestion] = useState(false);
 
   const navItems = [
-    { href: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-    { href: '/admin/profile', icon: Users, label: 'Profile' },
-    { href: '/admin/sekolah', icon: School, label: 'Manajemen Sekolah' }, // Baru: Untuk kelola NPSN
-    { href: '/admin/article', icon: Newspaper, label: 'Manajemen Artikel' },
-    { href: '/admin/tes', icon: FileText, label: 'Monitoring Tes' },
+    { href: '/pakar/home', icon: LayoutDashboard, label: 'Dashboard' },
+    { href: '/pakar/article', icon: Newspaper, label: 'Manajemen Artikel' },
+    { href: '/pakar/question', icon: Database, label: 'Konfigurasi Tes' },
   ];
 
-  const userSubItems = [
-    { href: '/admin/users/students', label: 'Data Siswa' },
-    { href: '/admin/users/teachers', label: 'Data Guru BK' },
-    { href: '/admin/users/pakar', label: 'Data Pakar' },
+  // Data untuk sub-menu Basis Pengetahuan
+  const basisDataSubItems = [
+    { href: '/pakar/basisdata/penyakit', label: 'Data Penyakit' },
+    { href: '/pakar/basisdata/gejala', label: 'Data Gejala' },
+    { href: '/pakar/basisdata/aturan', label: 'Aturan (Rules)' },
   ];
 
   return (
@@ -31,10 +32,12 @@ function AdminSidebar() {
           <path d="M20 10c0 4.42-3.58 8-8 8s-8-3.58-8-8c0-1.04.2-2.04.57-2.95" />
           <path d="M12 18c-2.67 0-5-1.34-5-3s2.33-3 5-3 5 1.34 5 3-2.33 3-5 3z" />
         </svg>
-        <span className="font-bold text-lg">Admin Panel</span>
+        <span className="font-bold text-lg">Pakar Panel</span>
       </div>
+
       <nav className="flex-1">
         <ul className="space-y-2">
+          {/* Menu Biasa */}
           {navItems.map((item) => (
             <li key={item.label}>
               <Link href={item.href} className={`flex items-center p-2 rounded-lg transition-colors ${pathname === item.href ? 'bg-slate-900 text-white' : 'hover:bg-slate-100 text-slate-700'}`}>
@@ -44,24 +47,26 @@ function AdminSidebar() {
             </li>
           ))}
 
-          {/* Dropdown Manajemen Pengguna */}
+          {/* Menu Dropdown: Manajemen Basis Pengetahuan */}
           <li>
             <button
-              onClick={() => setIsUserOpen(!isUserOpen)}
-              className={`w-full flex items-center justify-between p-2 rounded-lg transition-colors ${pathname.includes('/admin/pengguna') ? 'bg-slate-100 text-slate-900' : 'text-slate-700 hover:bg-slate-100'}`}
+              onClick={() => setIsBasisDataOpen(!isBasisDataOpen)}
+              className={`w-full flex items-center justify-between p-2 rounded-lg transition-colors ${pathname.includes('/pakar/basisdata') ? 'bg-slate-100 text-slate-900' : 'text-slate-700 hover:bg-slate-100'}`}
             >
               <div className="flex items-center">
-                <Users className="w-5 h-5 mr-3" />
-                <span>Manajemen Pengguna</span>
+                <Database className="w-5 h-5 mr-3" />
+                <span>Basis Pengetahuan</span>
               </div>
-              {isUserOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+              {isBasisDataOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
             </button>
-            {isUserOpen && (
+
+            {/* Sub-menu Items */}
+            {isBasisDataOpen && (
               <ul className="mt-2 ml-8 space-y-1">
-                {userSubItems.map((sub) => (
-                  <li key={sub.label}>
-                    <Link href={sub.href} className={`block p-2 text-sm rounded-md ${pathname === sub.href ? 'text-slate-900 font-bold' : 'text-slate-500 hover:text-slate-900'}`}>
-                      {sub.label}
+                {basisDataSubItems.map((subItem) => (
+                  <li key={subItem.label}>
+                    <Link href={subItem.href} className={`block p-2 text-sm rounded-md transition-colors ${pathname === subItem.href ? 'text-slate-900 font-bold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'}`}>
+                      {subItem.label}
                     </Link>
                   </li>
                 ))}
@@ -69,11 +74,11 @@ function AdminSidebar() {
             )}
           </li>
 
-          {/* Menu Hak Akses / Role */}
+          {/* Menu Tanya Jawab */}
           <li>
-            <Link href="/admin/role" className={`flex items-center p-2 rounded-lg transition-colors ${pathname === '/admin/roles' ? 'bg-slate-900 text-white' : 'hover:bg-slate-100 text-slate-700'}`}>
-              <ShieldCheck className="w-5 h-5 mr-3" />
-              Manajemen Role
+            <Link href="/pakar/faq" className={`flex items-center p-2 rounded-lg transition-colors ${pathname === '/pakar/faq' ? 'bg-slate-900 text-white' : 'hover:bg-slate-100 text-slate-700'}`}>
+              <MessageCircleQuestionMark className="w-5 h-5 mr-3" />
+              Tanya Jawab
             </Link>
           </li>
         </ul>
@@ -86,7 +91,7 @@ function AdminHeader() {
   return (
     <header className="bg-white border-b border-slate-200 h-16 flex items-center justify-end px-6">
       <div className="flex items-center space-x-4">
-        <span className="text-sm font-medium">Welcome, Admin!</span>
+        <span className="text-sm font-medium">Welcome, Pakar!</span>
         <Button variant="outline" size="sm">
           <LogOut className="w-4 h-4 mr-2" />
           Logout
