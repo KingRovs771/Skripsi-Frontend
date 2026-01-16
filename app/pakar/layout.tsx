@@ -14,13 +14,13 @@ function AdminSidebar() {
   const navItems = [
     { href: '/pakar/home', icon: LayoutDashboard, label: 'Dashboard' },
     { href: '/pakar/article', icon: Newspaper, label: 'Manajemen Artikel' },
-    { href: '/pakar/question', icon: Database, label: 'Konfigurasi Tes' },
+    { href: '/pakar/typeTes', icon: FileText, label: 'Kategori Tes' },
   ];
 
   // Data untuk sub-menu Basis Pengetahuan
   const basisDataSubItems = [
     { href: '/pakar/basisdata/penyakit', label: 'Data Penyakit' },
-    { href: '/pakar/basisdata/gejala', label: 'Data Gejala' },
+    { href: '/pakar/basisdata/pertanyaan', label: 'Data Pertanyaan' },
     { href: '/pakar/basisdata/aturan', label: 'Aturan (Rules)' },
   ];
 

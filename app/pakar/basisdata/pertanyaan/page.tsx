@@ -3,16 +3,16 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { mockBasisPengetahuanPenyakit } from '@/lib/data';
-import { PlusCircle, Pencil, Trash2, Loader2, Stethoscope, Info } from 'lucide-react';
+import { mockBasisPengetahuanGejala } from '@/lib/data';
+import { PlusCircle, Pencil, Trash2, Loader2, HelpCircle } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
 
 // Import komponen AlertDialog dari Shadcn UI
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
-export default function PakarPenyakitPage() {
-  const [penyakitList, setPenyakitList] = useState(mockBasisPengetahuanPenyakit);
+export default function PakarGejalaPage() {
+  const [gejalaList, setGejalaList] = useState(mockBasisPengetahuanGejala);
   const [loading, setLoading] = useState(false);
 
   // State untuk kontrol modal konfirmasi
@@ -31,11 +31,11 @@ export default function PakarPenyakitPage() {
 
     setLoading(true);
     try {
-      // Simulasi proses API
+      // Simulasi delay API
       await new Promise((resolve) => setTimeout(resolve, 800));
 
-      setPenyakitList(penyakitList.filter((item) => item.id !== selectedId));
-      toast.success('Data penyakit/indikasi berhasil dihapus.');
+      setGejalaList(gejalaList.filter((item) => item.id !== selectedId));
+      toast.success('Pertanyaan gejala berhasil dihapus.');
     } catch (error) {
       toast.error('Gagal menghapus data.');
     } finally {
@@ -50,12 +50,12 @@ export default function PakarPenyakitPage() {
       {/* HEADER SECTION */}
       <div className="flex justify-between items-center mb-6">
         <div className="space-y-1">
-          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Data Penyakit & Indikasi</h1>
-          <p className="text-sm text-slate-500 font-medium">Kelola daftar gangguan kesehatan mental beserta deskripsi dan solusinya.</p>
+          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Data Gejala</h1>
+          <p className="text-sm text-slate-500 font-medium">Kelola butir pertanyaan diagnosis yang akan dijawab oleh siswa.</p>
         </div>
-        <Link href="/pakar/basisdata/penyakit/create">
-          <Button className="bg-slate-900 hover:bg-slate-800 rounded-xl px-5">
-            <PlusCircle className="w-4 h-4 mr-2" /> Tambah Penyakit
+        <Link href="/pakar/basisdata/pertanyaan/create">
+          <Button className="bg-slate-900 hover:bg-slate-800 rounded-xl px-5 transition-all">
+            <PlusCircle className="w-4 h-4 mr-2" /> Tambah Pertanyaan
           </Button>
         </Link>
       </div>
@@ -66,38 +66,31 @@ export default function PakarPenyakitPage() {
           <Table>
             <TableHeader className="bg-slate-50/50">
               <TableRow>
-                <TableHead className="w-[60px] py-4 font-bold text-slate-700">No.</TableHead>
-                <TableHead className="w-[120px] font-bold text-slate-700">Kode</TableHead>
-                <TableHead className="w-[200px] font-bold text-slate-700">Nama Penyakit</TableHead>
-                <TableHead className="font-bold text-slate-700">Deskripsi & Solusi</TableHead>
+                <TableHead className="w-[80px] py-4 font-bold text-slate-700">No.</TableHead>
+                <TableHead className="w-[150px] font-bold text-slate-700">Kode Gejala</TableHead>
+                <TableHead className="w-[150px] font-bold text-slate-700">Kategori</TableHead>
+                <TableHead className="font-bold text-slate-700">Pertanyaan / Gejala</TableHead>
                 <TableHead className="text-right font-bold text-slate-700 pr-6 w-[120px]">Aksi</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {penyakitList.length > 0 ? (
-                penyakitList.map((penyakit, index) => (
-                  <TableRow key={penyakit.id} className="hover:bg-slate-50/50 transition-colors">
+              {gejalaList.length > 0 ? (
+                gejalaList.map((gejala, index) => (
+                  <TableRow key={gejala.id} className="hover:bg-slate-50/50 transition-colors">
                     <TableCell className="py-4 text-slate-400 font-medium">{index + 1}</TableCell>
                     <TableCell>
-                      <span className="px-2 py-1 bg-blue-50 text-blue-700 rounded-md text-xs font-black border border-blue-100 uppercase">{penyakit.kodepenyakit}</span>
+                      <span className="px-2 py-1 bg-blue-50 text-blue-700 rounded-md text-xs font-black border border-blue-100 uppercase">{gejala.kodegajala}</span>
                     </TableCell>
-                    <TableCell className="font-bold text-slate-900">{penyakit.NamaPenyakit}</TableCell>
                     <TableCell>
-                      <div className="space-y-1 max-w-md">
-                        <p className="text-sm text-slate-600 line-clamp-1 italic">
-                          <span className="font-bold not-italic text-slate-400">Desc:</span> {penyakit.Description}
-                        </p>
-                        <p className="text-sm text-slate-600 line-clamp-1">
-                          <span className="font-bold text-slate-400">Solusi:</span> {penyakit.Solution}
-                        </p>
-                      </div>
+                      <span className="px-2 py-1 bg-slate-100 text-slate-600 rounded-md text-[10px] font-black uppercase tracking-wider">{gejala.kategori}</span>
                     </TableCell>
+                    <TableCell className="font-medium text-slate-800">{gejala.namagejala}</TableCell>
                     <TableCell className="text-right pr-6">
                       <div className="flex justify-end gap-1">
                         <Button variant="ghost" size="icon" className="text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-all">
                           <Pencil className="w-4 h-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all" onClick={() => triggerDelete(penyakit.id)}>
+                        <Button variant="ghost" size="icon" className="text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all" onClick={() => triggerDelete(gejala.id)}>
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>
@@ -106,8 +99,8 @@ export default function PakarPenyakitPage() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-20 text-slate-400 font-medium">
-                    Belum ada data penyakit yang terdaftar.
+                  <TableCell colSpan={5} className="text-center py-20 text-slate-400 font-medium italic">
+                    Belum ada data pertanyaan gejala yang tersedia.
                   </TableCell>
                 </TableRow>
               )}
@@ -120,16 +113,18 @@ export default function PakarPenyakitPage() {
       <AlertDialog open={openAlert} onOpenChange={setOpenAlert}>
         <AlertDialogContent className="bg-white rounded-2xl border-none shadow-2xl max-w-sm">
           <AlertDialogHeader>
-            <div className="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center mb-2">
-              <Stethoscope className="w-6 h-6 text-red-500" />
+            <div className="w-12 h-12 bg-amber-50 rounded-full flex items-center justify-center mb-2">
+              <HelpCircle className="w-6 h-6 text-amber-500" />
             </div>
-            <AlertDialogTitle className="text-xl font-bold text-slate-900">Hapus Data Penyakit?</AlertDialogTitle>
-            <AlertDialogDescription className="text-slate-500 text-sm leading-relaxed">Menghapus indikasi ini akan berpengaruh pada hasil diagnosis sistem pakar. Data yang dihapus tidak dapat dipulihkan.</AlertDialogDescription>
+            <AlertDialogTitle className="text-xl font-bold text-slate-900">Hapus Pertanyaan?</AlertDialogTitle>
+            <AlertDialogDescription className="text-slate-500 text-sm leading-relaxed">
+              Pertanyaan ini mungkin terhubung dengan aturan basis pengetahuan. Menghapus data ini secara permanen dapat mengganggu logika sistem pakar.
+            </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="mt-6 gap-2">
-            <AlertDialogCancel className="border-slate-200 rounded-xl hover:bg-slate-50 font-medium text-slate-600">Batal</AlertDialogCancel>
+            <AlertDialogCancel className="border-slate-200 rounded-xl hover:bg-slate-50 font-medium text-slate-600 transition-all">Batal</AlertDialogCancel>
             <AlertDialogAction onClick={handleConfirmDelete} disabled={loading} className="bg-red-600 hover:bg-red-700 text-white rounded-xl font-medium px-6 shadow-sm transition-all">
-              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Ya, Hapus Data'}
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Ya, Hapus'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

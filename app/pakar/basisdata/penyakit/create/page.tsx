@@ -52,6 +52,14 @@ export default function CreateGAD7Page() {
             <label className="text-sm font-semibold text-slate-700">Nama Penyakit</label>
             <input type="text" className="w-full p-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900" placeholder="Masukkan Nama Penyakit....." required />
           </div>
+          <div className="space-y-2">
+            <label className="text-sm font-semibold text-slate-700">Description</label>
+            <input type="text" className="w-full p-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900" placeholder="Masukkan Deskripsi Penyakit....." required />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-semibold text-slate-700">Solutions</label>
+            <input type="text" className="w-full p-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900" placeholder="Masukkan Solusi yang perlu....." required />
+          </div>
 
           <div className="flex space-x-3 pt-4 border-t border-slate-100">
             <button type="submit" disabled={loading} className="flex-1 flex justify-center items-center bg-slate-900 text-white p-2.5 rounded-lg font-medium hover:bg-slate-800 disabled:bg-slate-400 transition-colors">

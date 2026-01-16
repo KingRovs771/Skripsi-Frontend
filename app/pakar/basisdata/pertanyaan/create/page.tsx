@@ -45,11 +45,24 @@ export default function CreateGAD7Page() {
       <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <label className="text-sm font-semibold text-slate-700">Kode Gejala</label>
+            <label className="text-sm font-semibold text-slate-700">Kode Pertanyaan</label>
             <input type="text" className="w-full p-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900" placeholder="Masukkan Kode Aturan....." required />
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-semibold text-slate-700">Nama Gejala</label>
+            <label className="text-sm font-semibold text-slate-700">Kategori Pertanyaan</label>
+            <select name="" id="" className="w-full p-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900">
+              <option value="">--- Pilih ---</option>
+              <option value="">PHQ 9</option>
+              <option value="">GAD 7</option>
+              <option value="">SRQ 20</option>
+            </select>
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-semibold text-slate-700">Pertanyaan</label>
+            <input type="text" className="w-full p-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900" placeholder="Masukkan Nama Penyakit....." required />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-semibold text-slate-700">Bobot untuk Neural Network</label>
             <input type="text" className="w-full p-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900" placeholder="Masukkan Nama Penyakit....." required />
           </div>
 
@@ -59,7 +72,7 @@ export default function CreateGAD7Page() {
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
                 <>
-                  <Save className="w-4 h-4 mr-2" /> Simpan Gejala
+                  <Save className="w-4 h-4 mr-2" /> Simpan Pertanyaan
                 </>
               )}
             </button>
