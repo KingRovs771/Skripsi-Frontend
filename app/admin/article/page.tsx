@@ -1,26 +1,58 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { mockArticles } from '@/lib/data';
-import { PlusCircle, Pencil, Trash2, Loader2 } from 'lucide-react';
+import { PlusCircle, Pencil, Trash2, Loader2, Eye } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
+import { fetchApi } from '@/lib/api';
 
 // Import komponen AlertDialog
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
+interface ArticleData {
+  ArticleUID: string;
+  JudulArticle: string;
+  Author: string;
+  CategoryName: string;
+  CreatedAt: string;
+}
+
 export default function PakarArticlePage() {
-  const [articles, setArticles] = useState(mockArticles);
+  const [articles, setArticles] = useState<ArticleData[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
 
   // State untuk mengontrol Dialog Konfirmasi
   const [openConfirm, setOpenConfirm] = useState(false);
-  const [selectedArticleId, setSelectedArticleId] = useState<number | null>(null);
+  const [selectedArticleId, setSelectedArticleId] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchArticles();
+  }, []);
+
+  const fetchArticles = async () => {
+    setLoading(true);
+    try {
+      // Endpoint yang digunakan menyesuaikan backend Golang
+      const response = await fetchApi('/api/article/admin/getArticles', { method: 'GET' });
+      const data = await response.json().catch(() => ({}));
+
+      if (response.ok) {
+        setArticles(data.data || []);
+      } else {
+        toast.error(data.Message || 'Gagal memuat artikel');
+      }
+    } catch (error) {
+      toast.error('Kehilangan koneksi ke server.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // 1. Fungsi saat tombol sampah diklik (Membuka Popup)
-  const onClickDelete = (id: number) => {
+  const onClickDelete = (id: string) => {
     setSelectedArticleId(id);
     setOpenConfirm(true);
   };
@@ -31,15 +63,18 @@ export default function PakarArticlePage() {
 
     setIsDeleting(true);
     try {
-      // Simulasi hapus data (Ganti dengan fetch API asli Anda nanti)
-      // await fetch(`${API_URL}/pakar/article/${selectedArticleId}`, { method: 'DELETE' });
+      // Sesuaikan URL jika format Golangnya berbeda `/pakar/article/${selectedArticleId}`
+      const response = await fetchApi(`/pakar/article/${selectedArticleId}`, { method: 'DELETE' });
+      const data = await response.json().catch(() => ({}));
 
-      await new Promise((resolve) => setTimeout(resolve, 800)); // Delay simulasi
-
-      setArticles(articles.filter((a) => a.id !== selectedArticleId));
-      toast.success('Artikel berhasil dihapus selamanya.');
+      if (response.ok) {
+        toast.success('Artikel berhasil dihapus selamanya.');
+        setArticles(articles.filter((a) => a.ArticleUID !== selectedArticleId));
+      } else {
+        toast.error(data.Message || 'Gagal menghapus artikel dari server.');
+      }
     } catch (error) {
-      toast.error('Gagal menghapus artikel.');
+      toast.error('Gagal menghapus artikel (Koneksi Error).');
     } finally {
       setIsDeleting(false);
       setOpenConfirm(false);
@@ -73,30 +108,48 @@ export default function PakarArticlePage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {articles.map((article) => (
-                <TableRow key={article.id} className="hover:bg-slate-50/50 transition-colors">
-                  <TableCell className="font-medium py-4">{article.title}</TableCell>
-                  <TableCell>
-                    <span className="px-3 py-1 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold">{article.category}</span>
-                  </TableCell>
-                  <TableCell>
-                    <span className="px-2 py-1 text-[10px] font-black uppercase tracking-wider rounded-md bg-green-100 text-green-700">Published</span>
-                  </TableCell>
-                  <TableCell className="text-right pr-6">
-                    <Button variant="ghost" size="icon" className="mr-1 hover:bg-blue-50 hover:text-blue-600 transition-all rounded-lg">
-                      <Pencil className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="text-slate-400 hover:text-red-600 hover:bg-red-50 transition-all rounded-lg"
-                      onClick={() => onClickDelete(article.id)} // Panggil fungsi buka popup
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="h-32 text-center text-slate-400">
+                    <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" />
+                    Memuat data artikel...
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : articles.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="h-32 text-center text-slate-500 font-medium">
+                    Belum ada artikel yang ditambahkan.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                articles.map((article) => (
+                  <TableRow key={article.ArticleUID} className="hover:bg-slate-50/50 transition-colors">
+                    <TableCell className="font-medium py-4">
+                      {article.JudulArticle}
+                      <p className="text-xs text-slate-400 font-normal mt-1">Author: {article.Author}</p>
+                    </TableCell>
+                    <TableCell>
+                      <span className="px-3 py-1 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold">{article.CategoryName}</span>
+                    </TableCell>
+                    <TableCell>
+                      <span className="px-2 py-1 text-[10px] font-black uppercase tracking-wider rounded-md bg-green-100 text-green-700">Published</span>
+                    </TableCell>
+                    <TableCell className="text-right pr-6">
+                      <Button variant="ghost" size="icon" className="mr-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-all rounded-lg">
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-slate-400 hover:text-red-600 hover:bg-red-50 transition-all rounded-lg"
+                        onClick={() => onClickDelete(article.ArticleUID)} // Panggil fungsi buka popup
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </CardContent>

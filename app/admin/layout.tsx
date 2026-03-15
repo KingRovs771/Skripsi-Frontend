@@ -1,11 +1,18 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Newspaper, FileText, Users, LogOut, School, ShieldCheck, ChevronRight, ChevronDown } from 'lucide-react';
+import { usePathname, useRouter } from 'next/navigation';
+import { LayoutDashboard, Newspaper, FileText, Users, LogOut, School, ShieldCheck, ChevronRight, ChevronDown, Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { fetchApi } from '@/lib/api';
+import { toast } from 'sonner';
 
-function AdminSidebar() {
+interface SidebarProps {
+  isOpen: boolean;
+  setIsOpen: (val: boolean) => void;
+}
+
+function AdminSidebar({ isOpen, setIsOpen }: SidebarProps) {
   const pathname = usePathname();
   const [isUserOpen, setIsUserOpen] = useState(false); // State untuk dropdown pengguna
 
@@ -24,15 +31,30 @@ function AdminSidebar() {
   ];
 
   return (
-    <aside className="w-64 bg-white border-r border-slate-200 p-4 flex flex-col">
-      <div className="flex items-center space-x-2 mb-8 px-2">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-900">
-          <path d="M12 2a5 5 0 0 0-5 5c0 1.84.95 3.5 2.43 4.44a5 5 0 0 0 5.14 0C16.05 10.5 17 8.84 17 7a5 5 0 0 0-5-5z" />
-          <path d="M20 10c0 4.42-3.58 8-8 8s-8-3.58-8-8c0-1.04.2-2.04.57-2.95" />
-          <path d="M12 18c-2.67 0-5-1.34-5-3s2.33-3 5-3 5 1.34 5 3-2.33 3-5 3z" />
-        </svg>
-        <span className="font-bold text-lg">Admin Panel</span>
-      </div>
+    <>
+      {/* Overlay untuk mobile / tablet saat sidebar terbuka */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden" 
+          onClick={() => setIsOpen(false)}
+        />
+      )}
+
+      <aside className={`fixed lg:static top-0 left-0 z-50 h-full w-64 bg-white border-r border-slate-200 p-4 flex flex-col transform transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
+        <div className="flex items-center justify-between space-x-2 mb-8 px-2">
+          <div className="flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-900">
+              <path d="M12 2a5 5 0 0 0-5 5c0 1.84.95 3.5 2.43 4.44a5 5 0 0 0 5.14 0C16.05 10.5 17 8.84 17 7a5 5 0 0 0-5-5z" />
+              <path d="M20 10c0 4.42-3.58 8-8 8s-8-3.58-8-8c0-1.04.2-2.04.57-2.95" />
+              <path d="M12 18c-2.67 0-5-1.34-5-3s2.33-3 5-3 5 1.34 5 3-2.33 3-5 3z" />
+            </svg>
+            <span className="font-bold text-lg">Admin Panel</span>
+          </div>
+          {/* Tombol Close untuk mobile */}
+          <button onClick={() => setIsOpen(false)} className="lg:hidden text-slate-500 hover:text-slate-900">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
       <nav className="flex-1">
         <ul className="space-y-2">
           {navItems.map((item) => (
@@ -79,17 +101,51 @@ function AdminSidebar() {
         </ul>
       </nav>
     </aside>
+    </>
   );
 }
 
-function AdminHeader() {
+function AdminHeader({ onMenuClick }: { onMenuClick: () => void }) {
+  const router = useRouter();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const handleLogout = async () => {
+    try {
+      setIsLoggingOut(true);
+      // Memanggil endpoint API logout di backend (contoh: /auth/logoutAdmin)
+      // Jika endpoint berbeda, silakan disesuaikan
+      await fetchApi('/auth/logoutAdmin', {
+        method: 'POST',
+      }).catch((err) => {
+        console.warn('Gagal memanggil API logout backend, lanjut hapus sesi lokal.', err);
+      });
+
+      // Menghapus token sesi di frontend
+      localStorage.removeItem('token');
+      toast.success('Berhasil logout.');
+      
+      // Arahkan kembali ke halaman login
+      router.push('/auth/login/admin');
+    } catch (error) {
+      toast.error('Terjadi kesalahan saat logout.');
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
+
   return (
-    <header className="bg-white border-b border-slate-200 h-16 flex items-center justify-end px-6">
+    <header className="bg-white border-b border-slate-200 h-16 flex items-center justify-between px-6 shrink-0">
+      <div className="flex items-center">
+        <button onClick={onMenuClick} className="lg:hidden mr-4 text-slate-500 hover:text-slate-900 transition-colors">
+          <Menu className="w-6 h-6" />
+        </button>
+      </div>
+
       <div className="flex items-center space-x-4">
-        <span className="text-sm font-medium">Welcome, Admin!</span>
-        <Button variant="outline" size="sm">
-          <LogOut className="w-4 h-4 mr-2" />
-          Logout
+        <span className="text-sm font-medium hidden md:inline-block">Welcome, Admin!</span>
+        <Button variant="outline" size="sm" onClick={handleLogout} disabled={isLoggingOut}>
+          <LogOut className="w-4 h-4 md:mr-2" />
+          <span className="hidden md:inline">{isLoggingOut ? 'Keluar...' : 'Logout'}</span>
         </Button>
       </div>
     </header>
@@ -97,12 +153,41 @@ function AdminHeader() {
 }
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
+  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    // Mengecek sesi JWT lokal. Kalau tidak ada token, berarti belum login.
+    const token = localStorage.getItem('token');
+    
+    if (!token) {
+      toast.error('Akses ditolak. Silakan login terlebih dahulu.', { id: 'auth-error' });
+      router.push('/auth/login/admin');
+    } else {
+      setIsAuthorized(true); // Token ditemukan, izinkan render Layout
+    }
+  }, [router]);
+
+  // Tampilkan layar loading saat proses verifikasi auth berjalan
+  // Ini menghindari tampilan dashboard "bocor" (flickering screen) sepersekian detik sebelum redirect berjalan.
+  if (!isAuthorized) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-slate-50">
+        <div className="flex flex-col items-center space-y-4">
+          <div className="w-10 h-10 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin"></div>
+          <p className="text-sm font-medium text-slate-500 animate-pulse">Memverifikasi Sesi Akses...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex h-screen bg-slate-100">
-      <AdminSidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <AdminHeader />
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-slate-100 p-6">{children}</main>
+    <div className="flex h-screen bg-slate-100 overflow-hidden relative">
+      <AdminSidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        <AdminHeader onMenuClick={() => setIsSidebarOpen(true)} />
+        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-slate-100 p-4 md:p-6">{children}</main>
       </div>
     </div>
   );

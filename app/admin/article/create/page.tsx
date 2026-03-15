@@ -1,13 +1,61 @@
 'use client';
-import React, { useState, ChangeEvent } from 'react';
+import React, { useState, useEffect, ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Save, Loader2, Image as ImageIcon, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner'; // 1. Import toast dari sonner
+import { fetchApi } from '@/lib/api'; // Import wrapper api
+import dynamic from 'next/dynamic';
+import 'react-quill-new/dist/quill.snow.css';
+
+// Tipe data kategori sesuai model backend
+type Category = {
+  category_id: number;
+  category_uid: string;
+  name_category: string;
+  description: string;
+  created_at: string;
+  update_at: string;
+};
+
+// Dynamic import ReactQuill agar tidak error SSR di Next.js
+const ReactQuill = dynamic(() => import('react-quill-new'), { ssr: false });
+
+// Konfigurasi Toolbar ala Wordpress untuk Quill
+const quillModules = {
+  toolbar: [
+    [{ header: [1, 2, 3, false] }],
+    ['bold', 'italic', 'underline', 'strike', 'blockquote'],
+    [{ list: 'ordered' }, { list: 'bullet' }],
+    ['link', 'image'],
+    ['clean'], // Tombol hapus format
+  ],
+};
 
 export default function CreateArticlePage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loadingCategories, setLoadingCategories] = useState(true);
+  const [categoryError, setCategoryError] = useState<string | null>(null);
+
+  // Fetch kategori dari backend saat komponen mount
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res = await fetchApi('/categories/getAllCategories', { method: 'GET' });
+        if (!res.ok) throw new Error('Gagal memuat kategori');
+        const json = await res.json();
+        setCategories(json.data || []);
+      } catch (err) {
+        setCategoryError('Gagal memuat kategori');
+        toast.error('Gagal memuat data kategori dari server');
+      } finally {
+        setLoadingCategories(false);
+      }
+    };
+    fetchCategories();
+  }, []);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
@@ -55,19 +103,26 @@ export default function CreateArticlePage() {
     setLoading(true);
 
     const data = new FormData();
-    data.append('title', formData.title);
-    data.append('content', formData.content);
-    data.append('category', formData.category);
-    data.append('status', formData.status);
+    data.append('judul_article', formData.title);
+    data.append('isi_article', formData.content);
+    data.append('category_uid', formData.category);
+    data.append('author', 'Administrator'); // Placeholder author
+
+    // Status can still be appended if your backend handles it eventually, or skipped.
+    // data.append('status', formData.status);
+
     if (selectedFile) {
-      data.append('image', selectedFile);
+      data.append('thumbnails', selectedFile);
     }
 
     try {
-      const response = await fetch('http://localhost:8080/pakar/article', {
+      // Menggunakan fetchApi untuk include JWT secara otomatis
+      const response = await fetchApi('/api/article/admin/createArticles', {
         method: 'POST',
         body: data,
       });
+
+      const json = await response.json().catch(() => ({}));
 
       if (response.ok) {
         // 2. Notifikasi Sukses
@@ -75,7 +130,7 @@ export default function CreateArticlePage() {
         router.push('/admin/article');
       } else {
         // 3. Notifikasi Gagal dari Server
-        toast.error('Gagal menyimpan artikel. Silakan cek kembali data Anda.');
+        toast.error(json.error || json.Message || 'Gagal menyimpan artikel. Silakan cek kembali data Anda.');
       }
     } catch (error) {
       // 4. Notifikasi Error Koneksi
@@ -86,7 +141,7 @@ export default function CreateArticlePage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 pb-12">
+    <div className="max-w-7xl mx-auto space-y-6 pb-12">
       {/* Header */}
       <div className="flex items-center space-x-4">
         <Link href="/admin/article" className="p-2 hover:bg-white rounded-full transition-colors border border-transparent hover:border-slate-200">
@@ -95,8 +150,8 @@ export default function CreateArticlePage() {
         <h1 className="text-3xl font-bold text-slate-900">Tambah Artikel Baru</h1>
       </div>
 
-      <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
+      <form onSubmit={handleSubmit} className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+        <div className="xl:col-span-3 space-y-6">
           <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-4">
             {/* Input Judul */}
             <div className="space-y-2">
@@ -140,16 +195,19 @@ export default function CreateArticlePage() {
               </div>
             </div>
 
-            {/* Konten */}
+            {/* Konten dengan Rich Text Editor */}
             <div className="space-y-2">
               <label className="text-sm font-semibold text-slate-700">Isi Konten</label>
-              <textarea
-                className="w-full p-4 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-900 min-h-[300px] resize-none leading-relaxed text-slate-800"
-                placeholder="Tuliskan isi artikel edukasi di sini..."
-                value={formData.content}
-                onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                required
-              />
+              <div className="bg-white rounded-xl overflow-hidden border border-slate-200 focus-within:ring-2 focus-within:ring-slate-900 focus-within:border-transparent transition-all">
+                <ReactQuill
+                  theme="snow"
+                  modules={quillModules}
+                  value={formData.content}
+                  onChange={(content) => setFormData({ ...formData, content })}
+                  placeholder="Mulai menulis artikel edukasi yang luar biasa di sini..."
+                  className="min-h-[500px] [&>.ql-container]:min-h-[450px] [&>.ql-container]:text-base [&>.ql-editor]:min-h-[450px]"
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -162,15 +220,20 @@ export default function CreateArticlePage() {
             <div className="space-y-2">
               <label className="text-sm font-semibold text-slate-700">Kategori</label>
               <select
-                className="w-full p-2.5 border border-slate-200 rounded-lg bg-white text-sm focus:ring-2 focus:ring-slate-100 outline-none"
+                className="w-full p-2.5 border border-slate-200 rounded-lg bg-white text-sm focus:ring-2 focus:ring-slate-100 outline-none disabled:bg-slate-50 disabled:text-slate-400"
                 value={formData.category}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                 required
+                disabled={loadingCategories}
               >
-                <option value="">Pilih Kategori</option>
-                <option value="Anxiety">Anxiety</option>
-                <option value="Depresi">Depresi</option>
-                <option value="Stress">Stress</option>
+                <option value="">
+                  {loadingCategories ? 'Memuat kategori...' : categoryError ? 'Gagal memuat kategori' : 'Pilih Kategori'}
+                </option>
+                {categories.map((cat) => (
+                  <option key={cat.category_uid} value={cat.category_uid}>
+                    {cat.name_category}
+                  </option>
+                ))}
               </select>
             </div>
 
