@@ -1,14 +1,22 @@
 'use client';
 import Link from 'next/link';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { isLoggedIn, getUserRole, getDashboardUrl } from '@/lib/auth';
 
 export default function LoginPage() {
-  // Di aplikasi nyata, Anda akan menggunakan state dan menangani submit form
-  // const [email, setEmail] = useState('');
-  // const [password, setPassword] = useState('');
+  const router = useRouter();
+
+  useEffect(() => {
+    if (isLoggedIn()) {
+      const role = getUserRole();
+      router.replace(getDashboardUrl(role));
+    }
+  }, [router]);
 
   return (
     <Card className="w-full max-w-md mx-4">

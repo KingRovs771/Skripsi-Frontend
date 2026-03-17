@@ -12,11 +12,15 @@ import { fetchApi } from '@/lib/api';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 interface ArticleData {
-  ArticleUID: string;
-  JudulArticle: string;
-  Author: string;
-  CategoryName: string;
-  CreatedAt: string;
+  article_uid: string;
+  judul_article: string;
+  author: string;
+  category_name?: string;
+  created_at?: string;
+  // Opsional jika ada endpoint detail
+  isi_article?: string;
+  status?: number;
+  thumbnails?: string;
 }
 
 export default function PakarArticlePage() {
@@ -40,7 +44,7 @@ export default function PakarArticlePage() {
       const data = await response.json().catch(() => ({}));
 
       if (response.ok) {
-        setArticles(data.data || []);
+        setArticles(data.data || data.Data || []);
       } else {
         toast.error(data.Message || 'Gagal memuat artikel');
       }
@@ -64,12 +68,12 @@ export default function PakarArticlePage() {
     setIsDeleting(true);
     try {
       // Sesuaikan URL jika format Golangnya berbeda `/pakar/article/${selectedArticleId}`
-      const response = await fetchApi(`/pakar/article/${selectedArticleId}`, { method: 'DELETE' });
+      const response = await fetchApi(`/api/article/admin/deleteArticles/${selectedArticleId}`, { method: 'DELETE' });
       const data = await response.json().catch(() => ({}));
 
       if (response.ok) {
         toast.success('Artikel berhasil dihapus selamanya.');
-        setArticles(articles.filter((a) => a.ArticleUID !== selectedArticleId));
+        setArticles(articles.filter((a) => a.article_uid !== selectedArticleId));
       } else {
         toast.error(data.Message || 'Gagal menghapus artikel dari server.');
       }
@@ -101,7 +105,7 @@ export default function PakarArticlePage() {
           <Table>
             <TableHeader className="bg-slate-50/50">
               <TableRow>
-                <TableHead className="font-bold py-4">Judul Artikel</TableHead>
+                <TableHead className="font-bold py-4">Thumbnail & Judul</TableHead>
                 <TableHead className="font-bold">Kategori</TableHead>
                 <TableHead className="font-bold">Status</TableHead>
                 <TableHead className="text-right font-bold pr-6">Aksi</TableHead>
@@ -123,26 +127,50 @@ export default function PakarArticlePage() {
                 </TableRow>
               ) : (
                 articles.map((article) => (
-                  <TableRow key={article.ArticleUID} className="hover:bg-slate-50/50 transition-colors">
+                  <TableRow key={article.article_uid} className="hover:bg-slate-50/50 transition-colors">
                     <TableCell className="font-medium py-4">
-                      {article.JudulArticle}
-                      <p className="text-xs text-slate-400 font-normal mt-1">Author: {article.Author}</p>
+                      <div className="flex items-center gap-4">
+                        <div className="w-16 h-12 rounded bg-slate-100 overflow-hidden shrink-0 border border-slate-200">
+                          <img
+                            src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/home/articles/${article.article_uid}/thumbnail`}
+                            alt={article.judul_article}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              // Fallback jika tidak ada gambar / 404
+                              e.currentTarget.style.display = 'none';
+                              e.currentTarget.parentElement!.innerHTML = '<div class="w-full h-full flex items-center justify-center text-slate-400"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="opacity-50"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></div>';
+                            }}
+                          />
+                        </div>
+                        <div>
+                          <p className="line-clamp-2 text-sm max-w-[250px] font-bold text-slate-900">{article.judul_article}</p>
+                          <p className="text-xs text-slate-400 font-normal py-0.5">Author: {article.author}</p>
+                        </div>
+                      </div>
                     </TableCell>
                     <TableCell>
-                      <span className="px-3 py-1 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold">{article.CategoryName}</span>
+                      {/* Kalau Golang belum join tabel otomatis, mungkin hanya dpt UID */}
+                      <span className="px-3 py-1 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold truncate max-w-[150px] inline-block">
+                        {article.category_name || '-'}
+                      </span>
                     </TableCell>
                     <TableCell>
-                      <span className="px-2 py-1 text-[10px] font-black uppercase tracking-wider rounded-md bg-green-100 text-green-700">Published</span>
+                      {/* Status bisa dipindah jika backend merepresentasikan 1 sbg publish dll */}
+                      <span className="px-2 py-1 text-[10px] font-black uppercase tracking-wider rounded-md bg-green-100 text-green-700">
+                        {article.status === 1 ? 'Draft' : 'Published'}
+                      </span>
                     </TableCell>
                     <TableCell className="text-right pr-6">
-                      <Button variant="ghost" size="icon" className="mr-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-all rounded-lg">
-                        <Eye className="w-4 h-4" />
-                      </Button>
+                      <Link href={`/admin/article/edit/${article.article_uid}`}>
+                        <Button variant="ghost" size="icon" className="mr-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-all rounded-lg">
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+                      </Link>
                       <Button
                         variant="ghost"
                         size="icon"
                         className="text-slate-400 hover:text-red-600 hover:bg-red-50 transition-all rounded-lg"
-                        onClick={() => onClickDelete(article.ArticleUID)} // Panggil fungsi buka popup
+                        onClick={() => onClickDelete(article.article_uid)} // Panggil fungsi buka popup
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>

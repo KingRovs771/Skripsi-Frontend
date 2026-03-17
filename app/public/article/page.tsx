@@ -1,26 +1,43 @@
 "use client";
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import ArticleCard from "@/components/ArticleCard";
 import { Input } from "@/components/ui/input";
-import { mockArticles } from "@/lib/data";
-import { Search } from "lucide-react";
+import { Search, Loader2 } from "lucide-react";
 
 export default function ArticleListPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterCategory, setFilterCategory] = useState("Semua");
+  const [articles, setArticles] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchArticles = async () => {
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+      try {
+        const res = await fetch(`${baseUrl}/api/home/articles`);
+        const json = await res.json();
+        setArticles(json.Data || []);
+      } catch (err) {
+        console.error("Gagal mendapatkan artikel:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchArticles();
+  }, []);
 
   const filteredArticles = useMemo(() => {
-    return mockArticles
+    return articles
       .filter(
         (article) =>
-          filterCategory === "Semua" || article.category === filterCategory
+          filterCategory === "Semua" || article.category_name === filterCategory
       )
       .filter((article) =>
         article.title.toLowerCase().includes(searchTerm.toLowerCase())
       );
-  }, [searchTerm, filterCategory]);
+  }, [searchTerm, filterCategory, articles]);
 
-  const categories = ["Semua", ...new Set(mockArticles.map((a) => a.category))];
+  const categories = ["Semua", ...new Set(articles.map((a) => a.category_name).filter(Boolean))];
 
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -48,9 +65,19 @@ export default function ArticleListPage() {
         </select>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {filteredArticles.map((article) => (
-          <ArticleCard key={article.id} article={article} />
-        ))}
+        {loading ? (
+          <div className="col-span-full flex justify-center py-20">
+             <Loader2 className="w-8 h-8 animate-spin text-slate-500" />
+          </div>
+        ) : filteredArticles.length > 0 ? (
+          filteredArticles.map((article: any, idx: number) => (
+            <ArticleCard key={article.slug || idx} article={article} />
+          ))
+        ) : (
+          <div className="col-span-full text-center text-slate-500 py-12">
+            Belum ada artikel yang cocok dengan pencarian Anda.
+          </div>
+        )}
       </div>
     </div>
   );

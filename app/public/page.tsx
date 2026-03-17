@@ -1,9 +1,24 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import ArticleCard from "@/components/ArticleCard";
-import { mockArticles } from "@/lib/data";
 
-export default function LandingPage() {
+// Helper fetch fungsi langsung dari env server agar SSR aman
+async function getHomeArticles() {
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+  try {
+    const res = await fetch(`${baseUrl}/api/home/articles`, { cache: 'no-store' });
+    if (!res.ok) return [];
+    const json = await res.json();
+    return json.Data || [];
+  } catch (error) {
+    console.error("Gagal get articles:", error);
+    return [];
+  }
+}
+
+export default async function LandingPage() {
+  const latestArticles = await getHomeArticles();
+
   return (
     <>
       {/* Hero Section */}
@@ -18,7 +33,7 @@ export default function LandingPage() {
           </p>
           <div className="mt-8 flex justify-center gap-4">
             <Button asChild className="px-8 py-3 text-lg">
-              <Link href="/public/test">Mulai Tes</Link>
+              <Link href="/auth/login">Mulai Tes</Link>
             </Button>
             <Button variant="outline" asChild className="px-8 py-3 text-lg">
               <Link href="/public/article">Baca Artikel</Link>
@@ -51,9 +66,13 @@ export default function LandingPage() {
             Artikel Edukatif Terbaru
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {mockArticles.slice(0, 3).map((article) => (
-              <ArticleCard key={article.id} article={article} />
-            ))}
+            {latestArticles.length > 0 ? (
+              latestArticles.slice(0, 3).map((article: any, index: number) => (
+                <ArticleCard key={article.slug || index} article={article} />
+              ))
+            ) : (
+              <p className="text-center col-span-full text-slate-500">Belum ada artikel yang tersedia.</p>
+            )}
           </div>
         </div>
       </section>
