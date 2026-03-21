@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { ArrowLeft, Save, Loader2, GraduationCap, School, Lock, Search, CheckCircle2 } from 'lucide-react';
 import { fetchApi } from '@/lib/api';
 import { toast } from 'sonner';
@@ -11,30 +11,14 @@ interface SchoolData {
   nama_sekolah: string;
 }
 
-export default function CreateGuru() {
+export default function EditGuru() {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
+  const params = useParams();
+  const teacherUid = params?.uid as string;
+
+  const [loadingPage, setLoadingPage] = useState(true);
+  const [loadingSubmit, setLoadingSubmit] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-
-  // ── Role UID Teacher (hidden) ──────────────────────────────────────────────
-  const [teacherRoleUid, setTeacherRoleUid] = useState('');
-
-  useEffect(() => {
-    const fetchTeacherRole = async () => {
-      try {
-        const res = await fetchApi('/api/role/getRole');
-        if (!res.ok) return;
-        const json = await res.json();
-        const roles: any[] = Array.isArray(json.Data) ? json.Data : [];
-        const role = roles.find((r) => r.role_name?.toLowerCase() === 'teacher');
-        if (role) setTeacherRoleUid(role.role_uid);
-        else console.warn('[CreateGuru] Role "teacher" tidak ditemukan');
-      } catch {
-        console.error('[CreateGuru] Gagal fetch role');
-      }
-    };
-    fetchTeacherRole();
-  }, []);
 
   // ── Form State ─────────────────────────────────────────────────────────────
   const [formData, setFormData] = useState({
@@ -42,7 +26,7 @@ export default function CreateGuru() {
     nama_lengkap: '',
     phone: '',
     email: '',
-    password: '',
+    password: '', // kosong = tidak ganti
     npsn: '',
   });
 
@@ -62,6 +46,46 @@ export default function CreateGuru() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // ── Pre-fill dari API ──────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!teacherUid) return;
+    const fetchTeacher = async () => {
+      try {
+        const res = await fetchApi(`/api/users/getTeacher/${teacherUid}`);
+        const json = await res.json().catch(() => ({}));
+        if (res.ok) {
+          const d = json.Data || json.data || json;
+          setFormData({
+            nip: d.nip ?? '',
+            nama_lengkap: d.nama_lengkap ?? '',
+            phone: d.phone ?? d.no_hp ?? '',
+            email: d.email ?? '',
+            password: '',
+            npsn: String(d.npsn ?? ''),
+          });
+          // Set sekolah yang sudah dipilih
+          if (d.nama_sekolah || d.npsn) {
+            setSelectedSchool({
+              npsn: String(d.npsn ?? ''),
+              nama_sekolah: d.nama_sekolah ?? '',
+            });
+            setSearchQuery(d.nama_sekolah ?? String(d.npsn ?? ''));
+          }
+        } else {
+          toast.error(json.Message || 'Gagal memuat data guru');
+          router.push('/admin/users/teachers');
+        }
+      } catch {
+        toast.error('Koneksi ke server gagal');
+        router.push('/admin/users/teachers');
+      } finally {
+        setLoadingPage(false);
+      }
+    };
+    fetchTeacher();
+  }, [teacherUid, router]);
+
+  // ── School Search Debounce ─────────────────────────────────────────────────
   useEffect(() => {
     if (selectedSchool) return;
     const timer = setTimeout(async () => {
@@ -105,34 +129,53 @@ export default function CreateGuru() {
     (e: React.ChangeEvent<HTMLInputElement>) =>
       setFormData((f) => ({ ...f, [field]: e.target.value }));
 
-  // ── Submit ─────────────────────────────────────────────────────────────────
+  // ── Submit Update ──────────────────────────────────────────────────────────
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.npsn) { toast.warning('Pilih sekolah terlebih dahulu'); return; }
-    if (!teacherRoleUid) { toast.error('Data role belum siap, coba refresh halaman'); return; }
 
-    setLoading(true);
+    setLoadingSubmit(true);
     try {
-      const res = await fetchApi('/api/users/createTeacher', {
-        method: 'POST',
-        body: JSON.stringify({ ...formData, role_uid: teacherRoleUid }),
+      const payload: any = {
+        nip: formData.nip,
+        nama_lengkap: formData.nama_lengkap,
+        phone: formData.phone,
+        email: formData.email,
+        npsn: formData.npsn,
+      };
+      if (formData.password) payload.password = formData.password;
+
+      const res = await fetchApi(`/api/users/updateTeacher/${teacherUid}`, {
+        method: 'PUT',
+        body: JSON.stringify(payload),
       });
       const json = await res.json().catch(() => ({}));
       if (res.ok) {
-        toast.success('Data guru berhasil ditambahkan!');
+        toast.success('Data guru berhasil diperbarui!');
         router.push('/admin/users/teachers');
       } else {
-        toast.error(json.error || json.Message || json.message || 'Gagal menyimpan data guru');
+        toast.error(json.error || json.Message || json.message || 'Gagal memperbarui data guru');
       }
     } catch {
       toast.error('Koneksi ke server gagal');
     } finally {
-      setLoading(false);
+      setLoadingSubmit(false);
     }
   };
 
   const inputClass =
     'w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-base';
+
+  if (loadingPage) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto text-slate-400 mb-3" />
+          <p className="text-sm text-slate-500">Memuat data guru...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-5xl mx-auto space-y-8 pb-20">
@@ -141,8 +184,8 @@ export default function CreateGuru() {
       </Link>
 
       <div>
-        <h1 className="text-3xl font-bold text-slate-900">Tambah Guru BK Baru</h1>
-        <p className="text-slate-500 text-base mt-2">Lengkapi informasi untuk mendaftarkan akun Guru Bimbingan Konseling.</p>
+        <h1 className="text-3xl font-bold text-slate-900">Edit Data Guru BK</h1>
+        <p className="text-slate-500 text-base mt-2">Perbarui informasi guru. Kosongkan password jika tidak ingin menggantinya.</p>
       </div>
 
       <form onSubmit={handleSubmit} className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
@@ -177,7 +220,7 @@ export default function CreateGuru() {
 
             <div className="relative" ref={dropdownRef}>
               <label className="text-sm font-semibold text-slate-700 block mb-2">
-                Cari Sekolah
+                Sekolah
                 {selectedSchool && (
                   <span className="ml-2 text-xs text-green-600 font-normal">✓ NPSN: {selectedSchool.npsn}</span>
                 )}
@@ -224,34 +267,29 @@ export default function CreateGuru() {
                 <input className={inputClass} type="email" placeholder="guru@sekolah.sch.id" required value={formData.email} onChange={set('email')} />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-semibold text-slate-700">Password Default</label>
-                <input className={inputClass} type="password" placeholder="••••••••" required value={formData.password} onChange={set('password')} />
+                <label className="text-sm font-semibold text-slate-700">
+                  Password Baru
+                  <span className="ml-1 text-xs text-slate-400 font-normal">(kosongkan jika tidak diganti)</span>
+                </label>
+                <input className={inputClass} type="password" placeholder="••••••••" value={formData.password} onChange={set('password')} />
               </div>
             </div>
           </section>
         </div>
 
         {/* Footer */}
-        <div className="px-10 py-6 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
-          <p className="text-xs">
-            {teacherRoleUid
-              ? <span className="text-green-600 font-medium">✓ Role Teacher siap</span>
-              : <span className="text-amber-500 font-medium flex items-center gap-1"><Loader2 className="w-3 h-3 animate-spin inline" /> Memuat role...</span>
-            }
-          </p>
-          <div className="flex items-center gap-3">
-            <Link href="/admin/users/teachers" className="px-6 py-3 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-xl transition-all">
-              Batal
-            </Link>
-            <button
-              type="submit"
-              disabled={loading || !teacherRoleUid}
-              className="bg-slate-900 text-white px-8 py-3 rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-slate-800 disabled:bg-slate-300 transition-all shadow-sm"
-            >
-              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-              Simpan Data Guru
-            </button>
-          </div>
+        <div className="px-10 py-6 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-3">
+          <Link href="/admin/users/teachers" className="px-6 py-3 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-xl transition-all">
+            Batal
+          </Link>
+          <button
+            type="submit"
+            disabled={loadingSubmit}
+            className="bg-slate-900 text-white px-8 py-3 rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-slate-800 disabled:bg-slate-300 transition-all shadow-sm"
+          >
+            {loadingSubmit ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            Simpan Perubahan
+          </button>
         </div>
       </form>
     </div>

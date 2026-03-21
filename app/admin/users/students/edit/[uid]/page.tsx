@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { ArrowLeft, Save, Loader2, Search, CheckCircle2, Hash, GraduationCap, Lock } from 'lucide-react';
 import { fetchApi } from '@/lib/api';
 import { toast } from 'sonner';
@@ -12,9 +12,13 @@ interface SchoolData {
   nama_sekolah: string;
 }
 
-export default function CreateSiswa() {
+export default function EditSiswa() {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
+  const params = useParams();
+  const studentUid = params?.uid as string;
+
+  const [loadingPage, setLoadingPage] = useState(true);
+  const [loadingSubmit, setLoadingSubmit] = useState(false);
 
   const [formData, setFormData] = useState({
     nisn: '',
@@ -22,7 +26,7 @@ export default function CreateSiswa() {
     no_hp: '',
     alamat: '',
     email: '',
-    password: '',
+    password: '',        // kosong = tidak ganti password
     jenjang: '',
     kelas: '',
     npsn: '',
@@ -38,14 +42,56 @@ export default function CreateSiswa() {
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node))
         setShowDropdown(false);
-      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // ── Fetch Data Siswa untuk Pre-fill ───────────────────────────────────────
+  useEffect(() => {
+    if (!studentUid) return;
+    const fetchStudent = async () => {
+      try {
+        const res = await fetchApi(`/api/student/admin/getStudent/${studentUid}`);
+        const json = await res.json().catch(() => ({}));
+        if (res.ok) {
+          const d = json.Data || json.data || json;
+          setFormData({
+            nisn: d.nisn ?? '',
+            nama_lengkap: d.nama_lengkap ?? '',
+            no_hp: d.no_hp ?? '',
+            alamat: d.alamat ?? '',
+            email: d.email ?? '',
+            password: '',
+            jenjang: d.jenjang ?? '',
+            kelas: d.kelas ?? '',
+            npsn: String(d.npsn ?? ''),
+          });
+          // Set sekolah yang sudah dipilih sebelumnya
+          if (d.nama_sekolah || d.npsn) {
+            setSelectedSchool({
+              npsn: String(d.npsn ?? ''),
+              nama_sekolah: d.nama_sekolah ?? '',
+            });
+            setSearchQuery(d.nama_sekolah ?? String(d.npsn ?? ''));
+          }
+        } else {
+          toast.error(json.Message || 'Gagal memuat data siswa');
+          router.push('/admin/users/students');
+        }
+      } catch {
+        toast.error('Koneksi ke server gagal');
+        router.push('/admin/users/students');
+      } finally {
+        setLoadingPage(false);
+      }
+    };
+    fetchStudent();
+  }, [studentUid, router]);
+
+  // ── School Search Debounce ─────────────────────────────────────────────────
   useEffect(() => {
     if (selectedSchool) return;
     const timer = setTimeout(async () => {
@@ -89,30 +135,46 @@ export default function CreateSiswa() {
     (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
       setFormData((f) => ({ ...f, [field]: e.target.value }));
 
-  // ── Submit ─────────────────────────────────────────────────────────────────
+  // ── Submit Update ──────────────────────────────────────────────────────────
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.npsn) { toast.warning('Pilih sekolah terlebih dahulu'); return; }
 
-    setLoading(true);
+    setLoadingSubmit(true);
     try {
-      const res = await fetchApi('/api/users/createStudents', {
-        method: 'POST',
-        body: JSON.stringify(formData),
+      // Kirim password hanya jika diisi
+      const payload: any = { ...formData };
+      if (!payload.password) delete payload.password;
+
+      const res = await fetchApi(`/api/student/admin/updateStudent/${studentUid}`, {
+        method: 'PUT',
+        body: JSON.stringify(payload),
       });
       const json = await res.json().catch(() => ({}));
       if (res.ok) {
-        toast.success('Data siswa berhasil ditambahkan!');
+        toast.success('Data siswa berhasil diperbarui!');
         router.push('/admin/users/students');
       } else {
-        toast.error(json.Message || json.message || json.error || 'Gagal menyimpan data siswa');
+        toast.error(json.Message || json.message || json.error || 'Gagal memperbarui data siswa');
       }
     } catch {
       toast.error('Koneksi ke server gagal');
     } finally {
-      setLoading(false);
+      setLoadingSubmit(false);
     }
   };
+
+  // ── Loading State ──────────────────────────────────────────────────────────
+  if (loadingPage) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto text-slate-400 mb-3" />
+          <p className="text-sm text-slate-500">Memuat data siswa...</p>
+        </div>
+      </div>
+    );
+  }
 
   // ── UI ─────────────────────────────────────────────────────────────────────
   return (
@@ -123,8 +185,8 @@ export default function CreateSiswa() {
       </Link>
 
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Tambah Siswa Baru</h1>
-        <p className="text-slate-500 text-sm mt-1">Pastikan NISN dan data sekolah sudah sesuai.</p>
+        <h1 className="text-2xl font-bold text-slate-900">Edit Data Siswa</h1>
+        <p className="text-slate-500 text-sm mt-1">Perbarui informasi siswa. Kosongkan password jika tidak ingin menggantinya.</p>
       </div>
 
       <form onSubmit={handleSubmit} className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
@@ -191,7 +253,7 @@ export default function CreateSiswa() {
             {/* School Search */}
             <div className="space-y-1.5 relative" ref={dropdownRef}>
               <label className="text-sm font-medium text-slate-700">
-                Cari Sekolah
+                Sekolah
                 {selectedSchool && (
                   <span className="ml-2 text-xs text-green-600 font-normal">✓ NPSN: {selectedSchool.npsn}</span>
                 )}
@@ -274,12 +336,14 @@ export default function CreateSiswa() {
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-sm font-medium text-slate-700">Password Default</label>
+                <label className="text-sm font-medium text-slate-700">
+                  Password Baru
+                  <span className="ml-1 text-xs text-slate-400 font-normal">(kosongkan jika tidak diganti)</span>
+                </label>
                 <input
                   type="password"
                   className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm"
                   placeholder="••••••••"
-                  required
                   value={formData.password}
                   onChange={set('password')}
                 />
@@ -298,11 +362,11 @@ export default function CreateSiswa() {
           </Link>
           <button
             type="submit"
-            disabled={loading}
+            disabled={loadingSubmit}
             className="bg-slate-900 text-white px-6 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-slate-800 disabled:bg-slate-300 transition-all shadow-sm"
           >
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            Simpan Data Siswa
+            {loadingSubmit ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            Simpan Perubahan
           </button>
         </div>
       </form>
