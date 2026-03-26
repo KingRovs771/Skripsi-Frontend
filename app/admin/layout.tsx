@@ -14,12 +14,12 @@ interface SidebarProps {
 
 function AdminSidebar({ isOpen, setIsOpen }: SidebarProps) {
   const pathname = usePathname();
-  const [isUserOpen, setIsUserOpen] = useState(false); // State untuk dropdown pengguna
+  const [isUserOpen, setIsUserOpen] = useState(pathname.includes('/admin/users'));
 
   const navItems = [
     { href: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { href: '/admin/profile', icon: Users, label: 'Profile' },
-    { href: '/admin/sekolah', icon: School, label: 'Manajemen Sekolah' }, // Baru: Untuk kelola NPSN
+    { href: '/admin/sekolah', icon: School, label: 'Manajemen Sekolah' },
     { href: '/admin/article', icon: Newspaper, label: 'Manajemen Artikel' },
     { href: '/admin/tes', icon: FileText, label: 'Monitoring Tes' },
   ];
@@ -35,12 +35,14 @@ function AdminSidebar({ isOpen, setIsOpen }: SidebarProps) {
       {/* Overlay untuk mobile / tablet saat sidebar terbuka */}
       {isOpen && (
         <div 
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden" 
+          className="lg:hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 transition-opacity" 
           onClick={() => setIsOpen(false)}
         />
       )}
 
-      <aside className={`fixed lg:static top-0 left-0 z-50 h-full w-64 bg-white border-r border-slate-200 p-4 flex flex-col transform transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
+      <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white border-r border-slate-200 p-4 flex flex-col transform transition-transform duration-300 ease-in-out shadow-2xl lg:shadow-none
+        ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
+      >
         <div className="flex items-center justify-between space-x-2 mb-8 px-2">
           <div className="flex items-center gap-2">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-900">
@@ -48,83 +50,91 @@ function AdminSidebar({ isOpen, setIsOpen }: SidebarProps) {
               <path d="M20 10c0 4.42-3.58 8-8 8s-8-3.58-8-8c0-1.04.2-2.04.57-2.95" />
               <path d="M12 18c-2.67 0-5-1.34-5-3s2.33-3 5-3 5 1.34 5 3-2.33 3-5 3z" />
             </svg>
-            <span className="font-bold text-lg">Admin Panel</span>
+            <span className="font-bold text-lg text-slate-900">Admin Panel</span>
           </div>
           {/* Tombol Close untuk mobile */}
           <button onClick={() => setIsOpen(false)} className="lg:hidden text-slate-500 hover:text-slate-900">
             <X className="w-5 h-5" />
           </button>
         </div>
-      <nav className="flex-1">
-        <ul className="space-y-2">
-          {navItems.map((item) => (
-            <li key={item.label}>
-              <Link href={item.href} className={`flex items-center p-2 rounded-lg transition-colors ${pathname === item.href ? 'bg-slate-900 text-white' : 'hover:bg-slate-100 text-slate-700'}`}>
-                <item.icon className="w-5 h-5 mr-3" />
-                {item.label}
+
+        <nav className="flex-1 overflow-y-auto">
+          <ul className="space-y-2">
+            {navItems.map((item) => (
+              <li key={item.label}>
+                <Link 
+                  href={item.href} 
+                  onClick={() => setIsOpen(false)}
+                  className={`flex items-center p-3 rounded-xl transition-all font-medium ${pathname === item.href ? 'bg-slate-900 text-white shadow-md shadow-slate-900/20' : 'hover:bg-slate-50 text-slate-600 hover:text-slate-900'}`}
+                >
+                  <item.icon className={`w-5 h-5 mr-3 ${pathname === item.href ? 'text-white' : 'text-slate-400'}`} />
+                  {item.label}
+                </Link>
+              </li>
+            ))}
+
+            <li className="my-2 border-t border-slate-100 pt-2" />
+
+            {/* Dropdown Manajemen Pengguna */}
+            <li>
+              <button
+                onClick={() => setIsUserOpen(!isUserOpen)}
+                className={`w-full flex items-center justify-between p-3 rounded-xl transition-all font-medium ${pathname.includes('/admin/users') ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}
+              >
+                <div className="flex items-center">
+                  <Users className={`w-5 h-5 mr-3 ${pathname.includes('/admin/users') ? 'text-slate-900' : 'text-slate-400'}`} />
+                  <span>Manajemen Pengguna</span>
+                </div>
+                {isUserOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+              </button>
+              {isUserOpen && (
+                <ul className="mt-2 ml-8 space-y-1">
+                  {userSubItems.map((sub) => (
+                    <li key={sub.label}>
+                      <Link 
+                        href={sub.href} 
+                        onClick={() => setIsOpen(false)}
+                        className={`block p-2 text-sm rounded-md transition-colors ${pathname === sub.href ? 'text-slate-900 font-bold' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'}`}
+                      >
+                        {sub.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </li>
+
+            {/* Menu Hak Akses / Role */}
+            <li>
+              <Link 
+                href="/admin/role" 
+                onClick={() => setIsOpen(false)}
+                className={`flex items-center p-3 rounded-xl transition-all font-medium ${pathname.includes('/admin/role') ? 'bg-slate-900 text-white shadow-md shadow-slate-900/20' : 'hover:bg-slate-50 text-slate-600 hover:text-slate-900'}`}
+              >
+                <ShieldCheck className={`w-5 h-5 mr-3 ${pathname.includes('/admin/role') ? 'text-white' : 'text-slate-400'}`} />
+                Manajemen Role
               </Link>
             </li>
-          ))}
-
-          {/* Dropdown Manajemen Pengguna */}
-          <li>
-            <button
-              onClick={() => setIsUserOpen(!isUserOpen)}
-              className={`w-full flex items-center justify-between p-2 rounded-lg transition-colors ${pathname.includes('/admin/pengguna') ? 'bg-slate-100 text-slate-900' : 'text-slate-700 hover:bg-slate-100'}`}
-            >
-              <div className="flex items-center">
-                <Users className="w-5 h-5 mr-3" />
-                <span>Manajemen Pengguna</span>
-              </div>
-              {isUserOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-            </button>
-            {isUserOpen && (
-              <ul className="mt-2 ml-8 space-y-1">
-                {userSubItems.map((sub) => (
-                  <li key={sub.label}>
-                    <Link href={sub.href} className={`block p-2 text-sm rounded-md ${pathname === sub.href ? 'text-slate-900 font-bold' : 'text-slate-500 hover:text-slate-900'}`}>
-                      {sub.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </li>
-
-          {/* Menu Hak Akses / Role */}
-          <li>
-            <Link href="/admin/role" className={`flex items-center p-2 rounded-lg transition-colors ${pathname === '/admin/roles' ? 'bg-slate-900 text-white' : 'hover:bg-slate-100 text-slate-700'}`}>
-              <ShieldCheck className="w-5 h-5 mr-3" />
-              Manajemen Role
-            </Link>
-          </li>
-        </ul>
-      </nav>
-    </aside>
+          </ul>
+        </nav>
+      </aside>
     </>
   );
 }
 
-function AdminHeader({ onMenuClick }: { onMenuClick: () => void }) {
+function AdminHeader({ toggleSidebar }: { toggleSidebar: () => void }) {
   const router = useRouter();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const handleLogout = async () => {
     try {
       setIsLoggingOut(true);
-      // Memanggil endpoint API logout di backend (contoh: /auth/logoutAdmin)
-      // Jika endpoint berbeda, silakan disesuaikan
-      await fetchApi('/auth/logoutAdmin', {
-        method: 'POST',
-      }).catch((err) => {
+      await fetchApi('/auth/logoutAdmin', { method: 'POST' }).catch((err) => {
         console.warn('Gagal memanggil API logout backend, lanjut hapus sesi lokal.', err);
       });
 
-      // Menghapus token sesi di frontend
       localStorage.removeItem('token');
       toast.success('Berhasil logout.');
-      
-      // Arahkan kembali ke halaman login
       router.push('/auth/login/admin');
     } catch (error) {
       toast.error('Terjadi kesalahan saat logout.');
@@ -134,18 +144,19 @@ function AdminHeader({ onMenuClick }: { onMenuClick: () => void }) {
   };
 
   return (
-    <header className="bg-white border-b border-slate-200 h-16 flex items-center justify-between px-6 shrink-0">
-      <div className="flex items-center">
-        <button onClick={onMenuClick} className="lg:hidden mr-4 text-slate-500 hover:text-slate-900 transition-colors">
-          <Menu className="w-6 h-6" />
-        </button>
-      </div>
+    <header className="bg-white border-b border-slate-200 h-16 flex items-center justify-between px-4 lg:px-6 shadow-sm z-30 relative shrink-0">
+      <button onClick={toggleSidebar} className="lg:hidden p-2 text-slate-500 hover:text-slate-900 rounded-lg bg-slate-50 transition-colors">
+        <Menu className="w-6 h-6" />
+      </button>
 
-      <div className="flex items-center space-x-4">
-        <span className="text-sm font-medium hidden md:inline-block">Welcome, Admin!</span>
-        <Button variant="outline" size="sm" onClick={handleLogout} disabled={isLoggingOut}>
-          <LogOut className="w-4 h-4 md:mr-2" />
-          <span className="hidden md:inline">{isLoggingOut ? 'Keluar...' : 'Logout'}</span>
+      <div className="flex items-center space-x-3 lg:space-x-4 ml-auto">
+        <span className="text-xs lg:text-sm font-semibold text-slate-700 hidden sm:block">Welcome, Admin!</span>
+        <Button variant="outline" size="sm" onClick={handleLogout} disabled={isLoggingOut} className="hidden sm:flex border-slate-200 text-slate-600 hover:bg-slate-50">
+          <LogOut className="w-4 h-4 mr-2" />
+          {isLoggingOut ? 'Keluar...' : 'Logout'}
+        </Button>
+        <Button variant="outline" size="icon" onClick={handleLogout} disabled={isLoggingOut} className="sm:hidden border-slate-200 text-slate-600">
+          <LogOut className="w-4 h-4" />
         </Button>
       </div>
     </header>
@@ -158,19 +169,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   useEffect(() => {
-    // Mengecek sesi JWT lokal. Kalau tidak ada token, berarti belum login.
     const token = localStorage.getItem('token');
-    
     if (!token) {
       toast.error('Akses ditolak. Silakan login terlebih dahulu.', { id: 'auth-error' });
       router.push('/auth/login/admin');
     } else {
-      setIsAuthorized(true); // Token ditemukan, izinkan render Layout
+      setIsAuthorized(true);
     }
   }, [router]);
 
-  // Tampilkan layar loading saat proses verifikasi auth berjalan
-  // Ini menghindari tampilan dashboard "bocor" (flickering screen) sepersekian detik sebelum redirect berjalan.
   if (!isAuthorized) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-slate-50">
@@ -183,11 +190,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   return (
-    <div className="flex h-screen bg-slate-100 overflow-hidden relative">
+    <div className="flex h-screen bg-slate-50 overflow-hidden relative">
       <AdminSidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
+      
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <AdminHeader onMenuClick={() => setIsSidebarOpen(true)} />
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-slate-100 p-4 md:p-6">{children}</main>
+        <AdminHeader toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} />
+        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-slate-50 p-4 lg:p-8">
+          {children}
+        </main>
       </div>
     </div>
   );

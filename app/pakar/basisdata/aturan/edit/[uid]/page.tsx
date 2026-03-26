@@ -1,15 +1,20 @@
 'use client';
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect } from 'react';
+import { useRouter, useParams } from 'next/navigation';
 import { ArrowLeft, Save, Loader2, Link2 } from 'lucide-react';
 import Link from 'next/link';
 import { fetchApi } from '@/lib/api';
 import { toast } from 'sonner';
 
-export default function CreateAturanPage() {
+export default function EditAturanPage() {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
+  const params = useParams();
+  const aturanUid = params?.uid as string;
 
+  const [loadingPage, setLoadingPage] = useState(true);
+  const [loadingSubmit, setLoadingSubmit] = useState(false);
+
+  // Default state form
   const [formData, setFormData] = useState({
     kode_penyakit: '',
     kode_pertanyaan: '',
@@ -17,9 +22,40 @@ export default function CreateAturanPage() {
     is_mandatory: 1, // 1 = Wajib, 0 = Opsional
   });
 
+  // ── PREFILL DATA DARI API ──
+  useEffect(() => {
+    if (!aturanUid) return;
+    const fetchAturan = async () => {
+      try {
+        const res = await fetchApi(`/api/aturan/getAturan/${aturanUid}`);
+        const json = await res.json().catch(() => ({}));
+        
+        if (res.ok) {
+          const d = json.Data || json.data || json;
+          setFormData({
+            kode_penyakit: d.kode_penyakit ?? '',
+            kode_pertanyaan: d.kode_pertanyaan ?? '',
+            min_value: Number(d.min_value ?? 0),
+            is_mandatory: Number(d.is_mandatory ?? 1),
+          });
+        } else {
+          toast.error(json.Message || json.error || 'Gagal memuat aturan', { id: 'fetch-error' });
+          router.push('/pakar/basisdata/aturan');
+        }
+      } catch {
+        toast.error('Koneksi ke server terputus', { id: 'fetch-error' });
+        router.push('/pakar/basisdata/aturan');
+      } finally {
+        setLoadingPage(false);
+      }
+    };
+    fetchAturan();
+  }, [aturanUid, router]);
+
+  // ── SUBMIT PERUBAHAN ──
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    setLoadingSubmit(true);
 
     try {
       const payload = {
@@ -29,23 +65,23 @@ export default function CreateAturanPage() {
         is_mandatory: Number(formData.is_mandatory),
       };
 
-      const res = await fetchApi('/api/aturan/createAturan', {
-        method: 'POST',
+      const res = await fetchApi(`/api/aturan/updateAturan/${aturanUid}`, {
+        method: 'PUT',
         body: JSON.stringify(payload),
       });
 
       const json = await res.json().catch(() => ({}));
 
       if (res.ok) {
-        toast.success('Aturan basis pengetahuan berhasil ditambahkan!');
+        toast.success('Aturan basis pengetahuan berhasil diperbarui!');
         router.push('/pakar/basisdata/aturan');
       } else {
-        toast.error(json.Message || json.error || 'Gagal menyimpan aturan.');
+        toast.error(json.Message || json.error || 'Gagal mengubah aturan.');
       }
     } catch (error) {
       toast.error('Kesalahan jaringan, gagal menghubungi server.');
     } finally {
-      setLoading(false);
+      setLoadingSubmit(false);
     }
   };
 
@@ -55,6 +91,17 @@ export default function CreateAturanPage() {
 
   const inputClass = "w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-base";
 
+  if (loadingPage) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto text-slate-400 mb-3" />
+          <p className="text-sm text-slate-500">Memuat data aturan...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-4xl mx-auto space-y-8 pb-20">
       <Link href="/pakar/basisdata/aturan" className="flex items-center text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors w-fit">
@@ -62,8 +109,8 @@ export default function CreateAturanPage() {
       </Link>
 
       <div>
-        <h1 className="text-3xl font-bold text-slate-900">Tambah Aturan Diagnosis</h1>
-        <p className="text-slate-500 text-base mt-2">Buat relasi baru antara Penyakit dan Pertanyaan gejala.</p>
+        <h1 className="text-3xl font-bold text-slate-900">Ubah Aturan Diagnosis</h1>
+        <p className="text-slate-500 text-base mt-2">Perbarui nilai atau mandatory pada relasi ini.</p>
       </div>
 
       <form onSubmit={handleSubmit} className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
@@ -80,7 +127,6 @@ export default function CreateAturanPage() {
                 <input 
                   type="text" 
                   className={inputClass} 
-                  placeholder="Contoh: P01" 
                   required 
                   value={formData.kode_penyakit}
                   onChange={set('kode_penyakit')}
@@ -92,7 +138,6 @@ export default function CreateAturanPage() {
                 <input 
                   type="text" 
                   className={inputClass} 
-                  placeholder="Contoh: G01" 
                   required 
                   value={formData.kode_pertanyaan}
                   onChange={set('kode_pertanyaan')}
@@ -100,11 +145,10 @@ export default function CreateAturanPage() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-semibold text-slate-700">Minimal Jawaban (Skor/Nilai)</label>
+                <label className="text-sm font-semibold text-slate-700">Minimal Skor</label>
                 <input 
                   type="number" 
                   className={inputClass} 
-                  placeholder="0" 
                   min="0"
                   required 
                   value={formData.min_value}
@@ -113,14 +157,14 @@ export default function CreateAturanPage() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-semibold text-slate-700">Sifat Pertanyaan</label>
+                <label className="text-sm font-semibold text-slate-700">Mandatory (Wajib Dijawab)</label>
                 <select 
                   className={inputClass} 
                   value={formData.is_mandatory} 
                   onChange={set('is_mandatory')}
                   required
                 >
-                  <option value={1}>Wajib Dijawab (Mandatory)</option>
+                  <option value={1}>Wajib</option>
                   <option value={0}>Opsional</option>
                 </select>
               </div>
@@ -136,11 +180,11 @@ export default function CreateAturanPage() {
           </Link>
           <button
             type="submit"
-            disabled={loading}
+            disabled={loadingSubmit}
             className="bg-slate-900 text-white px-8 py-3 rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-slate-800 disabled:bg-slate-300 transition-all shadow-sm"
           >
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            Simpan Aturan
+            {loadingSubmit ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            Simpan Perubahan
           </button>
         </div>
       </form>

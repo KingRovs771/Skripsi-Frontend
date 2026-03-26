@@ -1,151 +1,143 @@
 'use client';
-import React, { useState } from 'react';
-import { Plus, Search, Pencil, Trash2, ArrowLeft, Save, Loader2, LayoutGrid, Activity } from 'lucide-react';
-import Link from 'next/link';
+import React, { useState, useEffect } from 'react';
+import { Plus, Search, Pencil, Trash2, Loader2, LayoutGrid } from 'lucide-react';
 import { toast } from 'sonner';
+import { fetchApi } from '@/lib/api';
+import Link from 'next/link';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
-type ViewMode = 'list' | 'form';
+interface Category {
+  category_uid: string;
+  name_category: string;
+  description: string;
+}
 
 export default function KategoriTesPage() {
-  const [view, setView] = useState<ViewMode>('list');
-  const [loading, setLoading] = useState(false);
+  const [loadingInitial, setLoadingInitial] = useState(true);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Delete State
   const [openConfirm, setOpenConfirm] = useState(false);
-  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [selectedUid, setSelectedUid] = useState<string | null>(null);
 
-  // Mock Data Kategori
-  const [categories, setCategories] = useState([
-    { id: 1, nama: 'Kecemasan (Anxiety)', kode: 'GAD7', deskripsi: 'Tes untuk mengukur tingkat kecemasan berlebih.' },
-    { id: 2, nama: 'Depresi', kode: 'PHQ9', deskripsi: 'Tes indikasi gejala depresi pada siswa.' },
-    { id: 3, nama: 'Stress Akademik', kode: 'STR', deskripsi: 'Tes tekanan mental terkait beban belajar.' },
-  ]);
-
-  const [formData, setFormData] = useState({ nama: '', kode: '', deskripsi: '' });
-
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    // Simulasi API Call
-    setTimeout(() => {
-      toast.success('Kategori tes berhasil disimpan');
-      setLoading(false);
-      setView('list');
-    }, 800);
+  // ── FETCH CATEGORIES ──
+  const fetchCategories = async () => {
+    setLoadingInitial(true);
+    try {
+      const res = await fetchApi('/api/category/getAllCategories');
+      const json = await res.json().catch(() => ({}));
+      if (res.ok || json.data) {
+        setCategories(json.Data || json.data || []);
+      } else {
+        toast.error(json.error || json.Message || 'Gagal mengambil data kategori dari server', { id: 'fetch-category' });
+      }
+    } catch (err) {
+      toast.error('Gagal terhubung ke server', { id: 'fetch-category' });
+    } finally {
+      setLoadingInitial(false);
+    }
   };
 
-  const confirmDelete = (id: number) => {
-    setSelectedId(id);
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  const filteredCategories = categories.filter((c) =>
+    (c.name_category || '').toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // ── TRIGGER DELETE ──
+  const confirmDelete = (uid: string) => {
+    setSelectedUid(uid);
     setOpenConfirm(true);
   };
 
-  const handleDelete = () => {
-    setCategories(categories.filter((c) => c.id !== selectedId));
-    toast.success('Kategori telah dihapus');
-    setOpenConfirm(false);
+  const handleDelete = async () => {
+    if (!selectedUid) return;
+    try {
+      const res = await fetchApi(`/api/category/deleteCategory/${selectedUid}`, {
+        method: 'DELETE',
+      });
+      const json = await res.json().catch(() => ({}));
+      
+      if (res.ok || json.Status === 'Success') {
+        toast.success('Kategori telah dihapus');
+        setCategories((prev) => prev.filter((c) => c.category_uid !== selectedUid));
+      } else {
+        toast.error(json.Message || json.error || 'Gagal menghapus kategori');
+      }
+    } catch {
+      toast.error('Server terputus saat menghapus kategori');
+    } finally {
+      setOpenConfirm(false);
+      setSelectedUid(null);
+    }
   };
 
   return (
     <div className="max-w-5xl mx-auto space-y-8 pb-20">
-      {view === 'list' ? (
-        <>
-          {/* HEADER */}
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div className="space-y-1">
-              <h1 className="text-2xl font-semibold text-slate-900">Kategori Tes Diagnosis</h1>
-              <p className="text-slate-500 text-sm">Kelola pengelompokan jenis tes kesehatan mental.</p>
-            </div>
-            <button
-              onClick={() => {
-                setFormData({ nama: '', kode: '', deskripsi: '' });
-                setView('form');
-              }}
-              className="flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 transition-all shadow-sm active:scale-95"
-            >
-              <Plus className="w-4 h-4" /> Tambah Kategori
-            </button>
-          </div>
+      {/* HEADER */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-semibold text-slate-900">Kategori Tes Diagnosis</h1>
+          <p className="text-slate-500 text-sm">Kelola pengelompokan jenis instrumen tes kesehatan mental.</p>
+        </div>
+        <Link href="/pakar/typeTes/create">
+          <button className="flex items-center gap-2 bg-slate-900 text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-800 transition-all shadow-sm active:scale-95">
+            <Plus className="w-4 h-4" /> Tambah Kategori
+          </button>
+        </Link>
+      </div>
 
-          {/* SEARCH */}
-          <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <input placeholder="Cari kategori..." className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none text-sm" />
-          </div>
+      {/* SEARCH */}
+      <div className="relative max-w-md">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+        <input 
+          placeholder="Cari berdasarkan nama kategori..." 
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-slate-900/20 focus:border-slate-900 outline-none text-sm shadow-sm" 
+        />
+      </div>
 
-          {/* GRID LIST */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {categories.map((cat) => (
-              <div key={cat.id} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm group hover:border-blue-500 transition-all">
-                <div className="flex justify-between items-start mb-4">
-                  <div className="p-3 bg-slate-50 rounded-xl text-slate-400 group-hover:text-blue-600 group-hover:bg-blue-50 transition-all">
-                    <LayoutGrid className="w-6 h-6" />
-                  </div>
-                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button className="p-2 text-slate-400 hover:text-slate-900">
+      {/* GRID LIST */}
+      {loadingInitial ? (
+          <div className="py-20 flex flex-col items-center justify-center text-slate-400">
+            <Loader2 className="w-8 h-8 animate-spin mb-3" />
+            <p className="text-sm font-medium">Memuat kategori dar server...</p>
+          </div>
+      ) : filteredCategories.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredCategories.map((cat) => (
+            <div key={cat.category_uid} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm group hover:border-slate-400 hover:shadow-md transition-all">
+              <div className="flex justify-between items-start mb-4">
+                <div className="p-3 bg-slate-50 rounded-xl text-slate-400 group-hover:text-slate-900 group-hover:bg-slate-100 transition-all">
+                  <LayoutGrid className="w-6 h-6" />
+                </div>
+                <div className="flex gap-1 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Link href={`/pakar/typeTes/edit/${cat.category_uid}`}>
+                    <button className="p-2 text-slate-400 hover:text-blue-600 background-none rounded-lg hover:bg-slate-50">
                       <Pencil className="w-4 h-4" />
                     </button>
-                    <button onClick={() => confirmDelete(cat.id)} className="p-2 text-slate-400 hover:text-red-600">
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-                <div className="space-y-1">
-                  <h3 className="font-bold text-slate-900">{cat.nama}</h3>
-                  <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest">{cat.kode}</p>
-                  <p className="text-xs text-slate-500 leading-relaxed mt-2 line-clamp-2">{cat.deskripsi}</p>
+                  </Link>
+                  <button onClick={() => confirmDelete(cat.category_uid)} className="p-2 text-slate-400 hover:text-red-600 background-none rounded-lg hover:bg-red-50">
+                    <Trash2 className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
-            ))}
-          </div>
-        </>
-      ) : (
-        /* FORM CREATE / EDIT */
-        <div className="max-w-2xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4">
-          <button onClick={() => setView('list')} className="flex items-center text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors">
-            <ArrowLeft className="w-4 h-4 mr-2" /> Kembali ke Daftar
-          </button>
-
-          <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-            <div className="p-8 border-b border-slate-50">
-              <h2 className="text-xl font-semibold text-slate-900">Input Kategori Tes</h2>
-              <p className="text-slate-500 text-sm">Tambahkan kategori baru untuk mengelompokkan instrumen tes.</p>
+              <div className="space-y-1">
+                <h3 className="font-bold text-slate-900">{cat.name_category}</h3>
+                <p className="text-xs text-slate-500 leading-relaxed mt-2 line-clamp-3">
+                  {cat.description || <span className="italic text-slate-300">Tidak ada deskripsi</span>}
+                </p>
+              </div>
             </div>
-
-            <form onSubmit={handleSave} className="p-8 space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="md:col-span-2 space-y-2">
-                  <label className="text-sm font-medium text-slate-700">Nama Kategori</label>
-                  <input className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none text-sm font-semibold" placeholder="Contoh: Kecemasan" required />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-slate-700">Kode Singkat</label>
-                  <input className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none text-sm font-bold uppercase" placeholder="ANX" required />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">Deskripsi Singkat</label>
-                <textarea
-                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none min-h-[120px] resize-none text-sm text-slate-600"
-                  placeholder="Jelaskan tujuan kategori tes ini..."
-                />
-              </div>
-
-              <div className="flex items-center justify-end gap-3 pt-4">
-                <button type="button" onClick={() => setView('list')} className="px-6 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 rounded-lg">
-                  Batal
-                </button>
-                <button type="submit" disabled={loading} className="px-8 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 shadow-sm flex items-center gap-2">
-                  {loading ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <>
-                      <Save className="w-4 h-4" /> Simpan Kategori
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
+          ))}
+        </div>
+      ) : (
+        <div className="py-20 text-center text-slate-400 font-medium italic border-2 border-dashed border-slate-200 rounded-xl bg-slate-50/50">
+          Belum ada data kategori tes yang ditemukan.
         </div>
       )}
 
@@ -153,12 +145,14 @@ export default function KategoriTesPage() {
       <AlertDialog open={openConfirm} onOpenChange={setOpenConfirm}>
         <AlertDialogContent className="bg-white rounded-2xl max-w-sm border-none shadow-2xl">
           <AlertDialogHeader>
-            <AlertDialogTitle className="font-bold">Hapus Kategori?</AlertDialogTitle>
-            <AlertDialogDescription>Kategori yang dihapus akan hilang dari pilihan saat membuat tes baru.</AlertDialogDescription>
+            <AlertDialogTitle className="font-bold text-slate-900">Hapus Kategori?</AlertDialogTitle>
+            <AlertDialogDescription className="text-slate-500">
+              Kategori yang dihapus akan menghilang sepenuhnya dari basis data. Apakah Anda yakin?
+            </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="mt-4">
-            <AlertDialogCancel className="rounded-xl border-slate-200">Batal</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700 text-white rounded-xl">
+            <AlertDialogCancel className="rounded-xl border-slate-200 hover:bg-slate-50 transition-colors">Batal</AlertDialogCancel>
+            <AlertDialogAction onClick={(e) => { e.preventDefault(); handleDelete(); }} className="bg-red-600 hover:bg-red-700 text-white rounded-xl transition-colors">
               Ya, Hapus
             </AlertDialogAction>
           </AlertDialogFooter>

@@ -1,14 +1,18 @@
 'use client';
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect } from 'react';
+import { useRouter, useParams } from 'next/navigation';
 import { ArrowLeft, Save, Loader2, MessageSquare } from 'lucide-react';
 import Link from 'next/link';
 import { fetchApi } from '@/lib/api';
 import { toast } from 'sonner';
 
-export default function CreatePertanyaanPage() {
+export default function EditPertanyaanPage() {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
+  const params = useParams();
+  const pertanyaanUid = params?.uid as string;
+
+  const [loadingPage, setLoadingPage] = useState(true);
+  const [loadingSubmit, setLoadingSubmit] = useState(false);
 
   const [formData, setFormData] = useState({
     kode_pertanyaan: '',
@@ -17,9 +21,40 @@ export default function CreatePertanyaanPage() {
     bobot: 0,
   });
 
+  // ── PREFILL DATA DARI API ──
+  useEffect(() => {
+    if (!pertanyaanUid) return;
+    const loadPertanyaan = async () => {
+      try {
+        const res = await fetchApi(`/api/pertanyaan/getPertanyaanByUID/${pertanyaanUid}`);
+        const json = await res.json().catch(() => ({}));
+        
+        if (res.ok) {
+          const d = json.Data || json.data || json;
+          setFormData({
+            kode_pertanyaan: d.kode_pertanyaan ?? '',
+            kategori_pertanyaan: d.kategori_pertanyaan ?? '',
+            pertanyaan: d.pertanyaan ?? '',
+            bobot: Number(d.bobot ?? 0),
+          });
+        } else {
+          toast.error(json.Message || json.error || 'Gagal memuat pertanyaan', { id: 'fetch-error' });
+          router.push('/pakar/basisdata/pertanyaan');
+        }
+      } catch {
+        toast.error('Koneksi ke server terputus', { id: 'fetch-error' });
+        router.push('/pakar/basisdata/pertanyaan');
+      } finally {
+        setLoadingPage(false);
+      }
+    };
+    loadPertanyaan();
+  }, [pertanyaanUid, router]);
+
+  // ── SUBMIT PERUBAHAN ──
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    setLoadingSubmit(true);
 
     try {
       const payload = {
@@ -29,32 +64,44 @@ export default function CreatePertanyaanPage() {
         bobot: Number(formData.bobot),
       };
 
-      // API Golang menggunakan controller SavePertanyaan
-      const res = await fetchApi('/api/pertanyaan/savePertanyaan', {
-        method: 'POST',
+      const res = await fetchApi(`/api/pertanyaan/updatePertanyaan/${pertanyaanUid}`, {
+        method: 'PUT',
         body: JSON.stringify(payload),
       });
 
+      // Menangkap error JSON jika backend ada return response JSON
       const json = await res.json().catch(() => ({}));
 
-      if (res.ok) {
-        toast.success('Pertanyaan berhasil ditambahkan!');
+      // Mengambil ok meskipun json kosong karena bug API Golang (c.JSON missing di UpdatePertanyaan)
+      if (res.ok || json.Status === 'OK') {
+        toast.success('Pertanyaan berhasil diperbarui!');
         router.push('/pakar/basisdata/pertanyaan');
       } else {
-        toast.error(json.Message || json.error || 'Gagal menyimpan pertanyaan.');
+        toast.error(json.Message || json.error || 'Gagal mengubah pertanyaan.');
       }
     } catch (error) {
-      toast.error('Kesalahan jaringan, gagal menghubungi server.');
+      toast.error('Gagal menghubungi server. Apakah backend sudah diperbaiki?');
     } finally {
-      setLoading(false);
+      setLoadingSubmit(false);
     }
   };
 
-  const set = (field: keyof typeof formData) =>
+  const set = (field: keyof typeof formData) => 
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
       setFormData((f) => ({ ...f, [field]: e.target.value }));
 
   const inputClass = "w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-base";
+
+  if (loadingPage) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto text-slate-400 mb-3" />
+          <p className="text-sm text-slate-500">Memuat data pertanyaan...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 pb-20">
@@ -63,8 +110,8 @@ export default function CreatePertanyaanPage() {
       </Link>
 
       <div>
-        <h1 className="text-3xl font-bold text-slate-900">Tambah Pertanyaan Baru</h1>
-        <p className="text-slate-500 text-base mt-2">Buat kuesioner gejala atau parameter ukur sistem pakar.</p>
+        <h1 className="text-3xl font-bold text-slate-900">Ubah Pertanyaan</h1>
+        <p className="text-slate-500 text-base mt-2">Perbarui keterangan kuesioner atau sesuaikan nilai bobot CF Pakar.</p>
       </div>
 
       <form onSubmit={handleSubmit} className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
@@ -81,7 +128,6 @@ export default function CreatePertanyaanPage() {
                 <input 
                   type="text" 
                   className={inputClass} 
-                  placeholder="Contoh: G01" 
                   required 
                   value={formData.kode_pertanyaan}
                   onChange={set('kode_pertanyaan')}
@@ -93,7 +139,6 @@ export default function CreatePertanyaanPage() {
                 <input 
                   type="text" 
                   className={inputClass} 
-                  placeholder="Contoh: Fisik / Psikologis / Emosi" 
                   required 
                   value={formData.kategori_pertanyaan}
                   onChange={set('kategori_pertanyaan')}
@@ -104,7 +149,6 @@ export default function CreatePertanyaanPage() {
                 <label className="text-sm font-semibold text-slate-700">Isi Pertanyaan (Gejala Khusus)</label>
                 <textarea 
                   className={`${inputClass} min-h-[100px] resize-y`} 
-                  placeholder="Tuliskan pertanyaan kuisioner gejala di sini..." 
                   required 
                   value={formData.pertanyaan}
                   onChange={set('pertanyaan')}
@@ -112,17 +156,15 @@ export default function CreatePertanyaanPage() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-semibold text-slate-700">Bobot (Desimal)</label>
+                <label className="text-sm font-semibold text-slate-700">Bobot (Rentang 0.01 - 1.00)</label>
                 <input 
                   type="number" 
                   step="0.01" 
                   className={inputClass} 
-                  placeholder="Contoh: 0.8" 
                   required 
                   value={formData.bobot}
                   onChange={set('bobot')}
                 />
-                <p className="text-xs text-slate-500 font-medium">Nilai kepastian CF pakar dalam rentang (0.01 - 1.00)</p>
               </div>
             </div>
           </section>
@@ -136,11 +178,11 @@ export default function CreatePertanyaanPage() {
           </Link>
           <button
             type="submit"
-            disabled={loading}
+            disabled={loadingSubmit}
             className="bg-slate-900 text-white px-8 py-3 rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-slate-800 disabled:bg-slate-300 transition-all shadow-sm"
           >
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            Simpan Pertanyaan
+            {loadingSubmit ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            Simpan Perubahan
           </button>
         </div>
       </form>

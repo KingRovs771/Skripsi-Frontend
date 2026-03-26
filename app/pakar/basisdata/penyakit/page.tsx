@@ -1,103 +1,155 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { mockBasisPengetahuanPenyakit } from '@/lib/data';
-import { PlusCircle, Pencil, Trash2, Loader2, Stethoscope, Info } from 'lucide-react';
+import { PlusCircle, Pencil, Trash2, Loader2, Scale, Search } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
+import { fetchApi } from '@/lib/api';
 
 // Import komponen AlertDialog dari Shadcn UI
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
+interface Penyakit {
+  penyakit_uid: string;
+  kode_penyakit: string;
+  nama_penyakit: string;
+  description: string;
+  saran_penanganan: string;
+}
+
 export default function PakarPenyakitPage() {
-  const [penyakitList, setPenyakitList] = useState(mockBasisPengetahuanPenyakit);
-  const [loading, setLoading] = useState(false);
+  const [penyakitList, setPenyakitList] = useState<Penyakit[]>([]);
+  const [loadingInitial, setLoadingInitial] = useState(true);
+  const [loadingDelete, setLoadingDelete] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
-  // State untuk kontrol modal konfirmasi
+  // State untuk modal konfirmasi
   const [openAlert, setOpenAlert] = useState(false);
-  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [selectedUid, setSelectedUid] = useState<string | null>(null);
 
-  // Fungsi memicu alert
-  const triggerDelete = (id: number) => {
-    setSelectedId(id);
+  // ── FETCH PENYAKIT ──
+  const fetchPenyakit = async () => {
+    setLoadingInitial(true);
+    try {
+      // Endpoint ini menyesuaikan dengan backend Anda (GetAllPenyakits atau getAllPenyakit)
+      const res = await fetchApi('/api/penyakit/getAllPenyakits');
+      const json = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setPenyakitList(json.Data || json.data || []);
+      } else {
+        toast.error(json.Message || json.error || 'Gagal mengambil data penyakit dari server', { id: 'fetch-error' });
+      }
+    } catch (err) {
+      toast.error('Gagal terhubung ke server', { id: 'fetch-error' });
+    } finally {
+      setLoadingInitial(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchPenyakit();
+  }, []);
+
+  // Filter Search
+  const filtered = penyakitList.filter(
+    (p) =>
+      p.kode_penyakit?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.nama_penyakit?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // ── DELETE OPERATION ──
+  const triggerDelete = (uid: string) => {
+    setSelectedUid(uid);
     setOpenAlert(true);
   };
 
-  // Fungsi eksekusi hapus
   const handleConfirmDelete = async () => {
-    if (selectedId === null) return;
-
-    setLoading(true);
+    if (!selectedUid) return;
+    setLoadingDelete(true);
     try {
-      // Simulasi proses API
-      await new Promise((resolve) => setTimeout(resolve, 800));
-
-      setPenyakitList(penyakitList.filter((item) => item.id !== selectedId));
-      toast.success('Data penyakit/indikasi berhasil dihapus.');
+      const res = await fetchApi(`/api/penyakit/deletePenyakit/${selectedUid}`, {
+        method: 'DELETE',
+      });
+      const json = await res.json().catch(() => ({}));
+      
+      if (res.ok || json.Status === "Not Found" || res.status === 404 /* Backend returns 404 for success deleting */) {
+        toast.success('Penyakit berhasil dihapus.');
+        setPenyakitList((prev) => prev.filter((item) => item.penyakit_uid !== selectedUid));
+      } else {
+        toast.error(json.Message || json.message || 'Gagal menghapus penyakit.');
+      }
     } catch (error) {
-      toast.error('Gagal menghapus data.');
+      toast.error('Koneksi ke server terputus.');
     } finally {
-      setLoading(false);
+      setLoadingDelete(false);
       setOpenAlert(false);
-      setSelectedId(null);
+      setSelectedUid(null);
     }
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
-      {/* HEADER SECTION */}
+    <div className="max-w-6xl mx-auto space-y-6 pb-20">
       <div className="flex justify-between items-center mb-6">
         <div className="space-y-1">
-          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Data Penyakit & Indikasi</h1>
-          <p className="text-sm text-slate-500 font-medium">Kelola daftar gangguan kesehatan mental beserta deskripsi dan solusinya.</p>
+          <h1 className="text-3xl font-bold text-slate-900">Data Penyakit & Gangguan</h1>
+          <p className="text-sm text-slate-500 font-medium">Kelola daftar penyakit atau gangguan psikososial beserta sarannya.</p>
         </div>
         <Link href="/pakar/basisdata/penyakit/create">
-          <Button className="bg-slate-900 hover:bg-slate-800 rounded-xl px-5">
+          <Button className="bg-slate-900 hover:bg-slate-800 rounded-xl px-6">
             <PlusCircle className="w-4 h-4 mr-2" /> Tambah Penyakit
           </Button>
         </Link>
       </div>
 
-      {/* TABLE SECTION */}
+      <div className="relative mb-6">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+        <input
+          className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-900 outline-none text-sm shadow-sm"
+          placeholder="Cari berdasarkan Kode Penyakit atau Nama Penyakit..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
+      </div>
+
       <Card className="border-slate-200 shadow-sm rounded-2xl overflow-hidden">
         <CardContent className="p-0">
           <Table>
             <TableHeader className="bg-slate-50/50">
               <TableRow>
-                <TableHead className="w-[60px] py-4 font-bold text-slate-700">No.</TableHead>
-                <TableHead className="w-[120px] font-bold text-slate-700">Kode</TableHead>
-                <TableHead className="w-[200px] font-bold text-slate-700">Nama Penyakit</TableHead>
-                <TableHead className="font-bold text-slate-700">Deskripsi & Solusi</TableHead>
-                <TableHead className="text-right font-bold text-slate-700 pr-6 w-[120px]">Aksi</TableHead>
+                <TableHead className="w-[80px] py-4 font-bold text-slate-700">No.</TableHead>
+                <TableHead className="font-bold text-slate-700">Kode</TableHead>
+                <TableHead className="font-bold text-slate-700">Nama Penyakit</TableHead>
+                <TableHead className="font-bold text-slate-700">Deskripsi Singkat</TableHead>
+                <TableHead className="text-right font-bold text-slate-700 pr-6">Aksi</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {penyakitList.length > 0 ? (
-                penyakitList.map((penyakit, index) => (
-                  <TableRow key={penyakit.id} className="hover:bg-slate-50/50 transition-colors">
-                    <TableCell className="py-4 text-slate-400 font-medium">{index + 1}</TableCell>
-                    <TableCell>
-                      <span className="px-2 py-1 bg-blue-50 text-blue-700 rounded-md text-xs font-black border border-blue-100 uppercase">{penyakit.kodepenyakit}</span>
-                    </TableCell>
-                    <TableCell className="font-bold text-slate-900">{penyakit.NamaPenyakit}</TableCell>
-                    <TableCell>
-                      <div className="space-y-1 max-w-md">
-                        <p className="text-sm text-slate-600 line-clamp-1 italic">
-                          <span className="font-bold not-italic text-slate-400">Desc:</span> {penyakit.Description}
-                        </p>
-                        <p className="text-sm text-slate-600 line-clamp-1">
-                          <span className="font-bold text-slate-400">Solusi:</span> {penyakit.Solution}
-                        </p>
-                      </div>
+              {loadingInitial ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="h-40 text-center text-slate-400">
+                    <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3" />
+                    Memuat data penyakit...
+                  </TableCell>
+                </TableRow>
+              ) : filtered.length > 0 ? (
+                filtered.map((penyakit, index) => (
+                  <TableRow key={penyakit.penyakit_uid || index} className="hover:bg-slate-50/50 transition-colors">
+                    <TableCell className="py-4 text-slate-500 font-medium">{index + 1}</TableCell>
+                    <TableCell className="font-bold text-emerald-600">{penyakit.kode_penyakit}</TableCell>
+                    <TableCell className="font-bold text-slate-900">{penyakit.nama_penyakit}</TableCell>
+                    <TableCell className="text-slate-500 max-w-sm truncate" title={penyakit.description}>
+                      {penyakit.description || '-'}
                     </TableCell>
                     <TableCell className="text-right pr-6">
                       <div className="flex justify-end gap-1">
-                        <Button variant="ghost" size="icon" className="text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-all">
-                          <Pencil className="w-4 h-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all" onClick={() => triggerDelete(penyakit.id)}>
+                        <Link href={`/pakar/basisdata/penyakit/edit/${penyakit.penyakit_uid}`}>
+                          <Button variant="ghost" size="icon" className="text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all">
+                            <Pencil className="w-4 h-4" />
+                          </Button>
+                        </Link>
+                        <Button variant="ghost" size="icon" className="text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all" onClick={() => triggerDelete(penyakit.penyakit_uid)}>
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>
@@ -106,8 +158,8 @@ export default function PakarPenyakitPage() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-20 text-slate-400 font-medium">
-                    Belum ada data penyakit yang terdaftar.
+                  <TableCell colSpan={5} className="text-center py-20 text-slate-400 font-medium italic">
+                    Belum ada data penyakit yang tersedia.
                   </TableCell>
                 </TableRow>
               )}
@@ -121,15 +173,21 @@ export default function PakarPenyakitPage() {
         <AlertDialogContent className="bg-white rounded-2xl border-none shadow-2xl max-w-sm">
           <AlertDialogHeader>
             <div className="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center mb-2">
-              <Stethoscope className="w-6 h-6 text-red-500" />
+              <Scale className="w-6 h-6 text-red-500" />
             </div>
-            <AlertDialogTitle className="text-xl font-bold text-slate-900">Hapus Data Penyakit?</AlertDialogTitle>
-            <AlertDialogDescription className="text-slate-500 text-sm leading-relaxed">Menghapus indikasi ini akan berpengaruh pada hasil diagnosis sistem pakar. Data yang dihapus tidak dapat dipulihkan.</AlertDialogDescription>
+            <AlertDialogTitle className="text-xl font-bold text-slate-900">Hapus Penyakit?</AlertDialogTitle>
+            <AlertDialogDescription className="text-slate-500 text-sm leading-relaxed">
+              Menghapus data penyakit ini akan menyebabkan history diagnosis yang berkaitan menjadi tidak utuh. Apakah Anda yakin?
+            </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="mt-6 gap-2">
             <AlertDialogCancel className="border-slate-200 rounded-xl hover:bg-slate-50 font-medium text-slate-600">Batal</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmDelete} disabled={loading} className="bg-red-600 hover:bg-red-700 text-white rounded-xl font-medium px-6 shadow-sm transition-all">
-              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Ya, Hapus Data'}
+            <AlertDialogAction 
+              onClick={(e) => { e.preventDefault(); handleConfirmDelete(); }}
+              disabled={loadingDelete} 
+              className="bg-red-600 hover:bg-red-700 text-white rounded-xl font-medium px-6 shadow-sm transition-all"
+            >
+              {loadingDelete ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Ya, Hapus Data'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
