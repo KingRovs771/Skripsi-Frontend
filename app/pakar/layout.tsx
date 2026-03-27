@@ -72,13 +72,13 @@ function AdminSidebar({ isOpen, setIsOpen }: { isOpen: boolean, setIsOpen: (val:
             <li>
               <button
                 onClick={() => setIsBasisDataOpen(!isBasisDataOpen)}
-                className={`w-full flex items-center justify-between p-3 rounded-xl transition-all font-medium ${pathname.includes('/pakar/basisdata') ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}
+                className={`w-full flex items-center justify-between p-3 rounded-xl text-left transition-all font-medium ${pathname.includes('/pakar/basisdata') ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}
               >
                 <div className="flex items-center">
-                  <Database className={`w-5 h-5 mr-3 ${pathname.includes('/pakar/basisdata') ? 'text-slate-900' : 'text-slate-400'}`} />
+                  <Database className={`w-5 h-5 mr-3 shrink-0 ${pathname.includes('/pakar/basisdata') ? 'text-slate-900' : 'text-slate-400'}`} />
                   <span>Basis Pengetahuan</span>
                 </div>
-                {isBasisDataOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                {isBasisDataOpen ? <ChevronDown className="w-4 h-4 shrink-0" /> : <ChevronRight className="w-4 h-4 shrink-0" />}
               </button>
 
               {/* Sub-menu Items */}
@@ -89,7 +89,7 @@ function AdminSidebar({ isOpen, setIsOpen }: { isOpen: boolean, setIsOpen: (val:
                       <Link 
                         href={subItem.href} 
                         onClick={() => setIsOpen(false)}
-                        className={`block p-2 text-sm rounded-md transition-colors ${pathname === subItem.href ? 'text-slate-900 font-bold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'}`}
+                        className={`block text-left p-2 text-sm rounded-md transition-colors ${pathname === subItem.href ? 'text-slate-900 font-bold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'}`}
                       >
                         {subItem.label}
                       </Link>

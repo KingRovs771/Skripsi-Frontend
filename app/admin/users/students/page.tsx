@@ -12,6 +12,7 @@ import { Plus, Search, Pencil, Trash2, Loader2, GraduationCap, Users } from 'luc
 // ── Tipe Data ──────────────────────────────────────────────────────────────────
 interface Student {
   // Berbagai kemungkinan nama field UID dari backend Go
+  students_uid?: string;
   student_uid?: string;
   user_uid?: string;
   siswa_uid?: string;
@@ -30,7 +31,7 @@ interface Student {
 
 /** Ambil UID dari student — toleran terhadap berbagai field name backend */
 const getUid = (s: Student): string =>
-  s.student_uid ?? s.user_uid ?? s.siswa_uid ?? s.uid ?? String(s.id ?? '');
+  s.students_uid ?? s.student_uid ?? s.user_uid ?? s.siswa_uid ?? s.uid ?? String(s.id ?? '');
 
 export default function ManajemenSiswa() {
   const [students, setStudents] = useState<Student[]>([]);
@@ -87,13 +88,13 @@ export default function ManajemenSiswa() {
     if (!selectedUid) return;
     setIsDeleting(true);
     try {
-      const res = await fetchApi(`/api/student/admin/deleteStudent/${selectedUid}`, {
+      const res = await fetchApi(`/api/users/deleteStudents/${selectedUid}`, {
         method: 'DELETE',
       });
       const json = await res.json().catch(() => ({}));
       if (res.ok) {
         toast.success('Data siswa berhasil dihapus');
-        setStudents((prev) => prev.filter((s) => s.student_uid !== selectedUid));
+        setStudents((prev) => prev.filter((s) => getUid(s) !== selectedUid));
       } else {
         toast.error(json.Message || json.message || 'Gagal menghapus data siswa');
       }

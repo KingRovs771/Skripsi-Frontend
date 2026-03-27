@@ -51,7 +51,7 @@ export default function EditGuru() {
     if (!teacherUid) return;
     const fetchTeacher = async () => {
       try {
-        const res = await fetchApi(`/api/users/getTeacher/${teacherUid}`);
+        const res = await fetchApi(`/api/users/getTeacherById/${teacherUid}`);
         const json = await res.json().catch(() => ({}));
         if (res.ok) {
           const d = json.Data || json.data || json;

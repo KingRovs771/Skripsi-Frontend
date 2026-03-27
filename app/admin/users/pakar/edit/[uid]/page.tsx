@@ -29,17 +29,17 @@ export default function EditPakar() {
   });
 
   // ── Foto State ─────────────────────────────────────────────────────────────
-  const [existingPhotoUrl, setExistingPhotoUrl] = useState<string | null>(null); // URL foto lama dari server
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null);         // Preview foto baru
-  const [photoBase64, setPhotoBase64] = useState<string | null>(null);           // Base64 foto baru untuk dikirim
-  const [removeExistingPhoto, setRemoveExistingPhoto] = useState(false);         // Flag hapus foto lama
+  const [existingPhotoUrl, setExistingPhotoUrl] = useState<string | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [photoBase64, setPhotoBase64] = useState<string | null>(null);
+  const [removeExistingPhoto, setRemoveExistingPhoto] = useState(false);
 
   // ── Pre-fill dari API ──────────────────────────────────────────────────────
   useEffect(() => {
     if (!pakarUid) return;
     const fetchPakar = async () => {
       try {
-        const res = await fetchApi(`/api/users/getPakar/${pakarUid}`);
+        const res = await fetchApi(`/api/users/getPakarById/${pakarUid}`);
         const json = await res.json().catch(() => ({}));
         if (res.ok) {
           const d = json.Data || json.data || json;

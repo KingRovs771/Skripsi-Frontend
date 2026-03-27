@@ -1,9 +1,9 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Users, FileText, AlertTriangle, Activity, Server, Database, Wifi, WifiOff, RefreshCcw } from 'lucide-react';
+import { Users, FileText, AlertTriangle, Server, Database, RefreshCcw } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { mockDashboardData } from '@/lib/data';
+import { fetchApi } from '@/lib/api';
 
 // Komponen Card Statistik yang sudah ada
 const StatCard = ({ icon: Icon, title, value, color = 'text-slate-900' }: { icon: React.ElementType; title: string; value: number | string; color?: string }) => (
@@ -23,17 +23,37 @@ export default function AdminDashboardPage() {
   const [dbStatus, setDbStatus] = useState<'online' | 'offline'>('offline');
   const [isChecking, setIsChecking] = useState(true);
 
-  // Fungsi untuk mengecek status ke Backend Go
-  const checkHealth = async () => {
+  const [dashboardData, setDashboardData] = useState({
+    totalStudents: 0,
+    testsTaken: 0,
+    needsAttention: 0,
+    chartData: [] as any[],
+  });
+
+  // Fungsi untuk mengambil data dashboard full ke Backend Go (/healthcheck)
+  const fetchDashboardData = async () => {
     setIsChecking(true);
     try {
-      // Pastikan Anda membuat endpoint /api/health di Go
-      const response = await fetch('http://localhost:8080/api/health', { cache: 'no-store' });
-      const data = await response.json();
+      const response = await fetchApi('/api/admin/healthcheck', { cache: 'no-store' });
+      const json = await response.json();
 
-      if (response.ok) {
-        setServerStatus('online');
-        setDbStatus(data.database === 'connected' ? 'online' : 'offline');
+      if (response.ok && json.Data) {
+        const { status_system, stats, grafik } = json.Data;
+
+        // Update Server Status UI
+        setServerStatus(status_system.api_server === 'ONLINE' ? 'online' : 'offline');
+        setDbStatus(status_system.database === 'CONNECTED' ? 'online' : 'offline');
+
+        // Update Stat Cards dan Charts
+        setDashboardData({
+          totalStudents: stats.total_siswa || 0,
+          testsTaken: stats.tes_selesai || 0,
+          needsAttention: stats.butuh_perhatian || 0,
+          chartData: grafik ? grafik.map((g: any) => ({
+            name: g.kategori,
+            "Jumlah Siswa": g.jumlah
+          })) : []
+        });
       } else {
         setServerStatus('offline');
         setDbStatus('offline');
@@ -47,8 +67,8 @@ export default function AdminDashboardPage() {
   };
 
   useEffect(() => {
-    checkHealth();
-    const interval = setInterval(checkHealth, 30000); // Cek otomatis setiap 30 detik
+    fetchDashboardData();
+    const interval = setInterval(fetchDashboardData, 30000); // Sinkronisasi otomatis setiap 30 detik
     return () => clearInterval(interval);
   }, []);
 
@@ -56,7 +76,7 @@ export default function AdminDashboardPage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Dashboard Statistik</h1>
-        <button onClick={checkHealth} className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-bold hover:bg-slate-50 transition-all active:scale-95">
+        <button onClick={fetchDashboardData} className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-bold hover:bg-slate-50 transition-all active:scale-95 shadow-sm">
           <RefreshCcw className={`w-4 h-4 ${isChecking ? 'animate-spin' : ''}`} />
           Refresh Status
         </button>
@@ -64,7 +84,7 @@ export default function AdminDashboardPage() {
 
       {/* Monitoring Section */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        <Card className="border-l-4 border-l-slate-900">
+        <Card className="border-l-4 border-l-slate-900 shadow-sm">
           <CardContent className="flex items-center justify-between p-6">
             <div className="flex items-center gap-4">
               <div className={`p-3 rounded-2xl ${serverStatus === 'online' ? 'bg-green-50' : 'bg-red-50'}`}>
@@ -85,7 +105,7 @@ export default function AdminDashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-l-4 border-l-slate-900">
+        <Card className="border-l-4 border-l-slate-900 shadow-sm">
           <CardContent className="flex items-center justify-between p-6">
             <div className="flex items-center gap-4">
               <div className={`p-3 rounded-2xl ${dbStatus === 'online' ? 'bg-green-50' : 'bg-red-50'}`}>
@@ -109,27 +129,34 @@ export default function AdminDashboardPage() {
 
       {/* Row Statistik Utama */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <StatCard icon={Users} title="Total Siswa" value={mockDashboardData.totalStudents} />
-        <StatCard icon={FileText} title="Tes Selesai" value={mockDashboardData.testsTaken} />
-        <StatCard icon={AlertTriangle} title="Butuh Perhatian" value={mockDashboardData.needsAttention} color="text-red-500" />
+        <StatCard icon={Users} title="Total Siswa Terdaftar" value={dashboardData.totalStudents} />
+        <StatCard icon={FileText} title="Tes Selesai" value={dashboardData.testsTaken} />
+        <StatCard icon={AlertTriangle} title="Butuh Perhatian (Skor > 75)" value={dashboardData.needsAttention} color="text-red-600" />
       </div>
 
-      <Card>
+      <Card className="shadow-sm">
         <CardHeader>
           <CardTitle>Grafik Sebaran Indikasi Kesehatan Mental</CardTitle>
-          <CardDescription>Berdasarkan hasil tes yang telah diselesaikan siswa.</CardDescription>
+          <CardDescription>Berdasarkan hasil tes keseluruhan yang telah diselesaikan siswa.</CardDescription>
         </CardHeader>
-        <CardContent className="h-96">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={mockDashboardData.chartData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip cursor={{ fill: 'transparent' }} />
-              <Legend />
-              <Bar dataKey="Jumlah Siswa" fill="#0f172a" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+        <CardContent className="h-96 w-full">
+          {dashboardData.chartData.length > 0 ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={dashboardData.chartData}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                <XAxis dataKey="name" stroke="#64748B" fontSize={12} tickLine={false} axisLine={false} />
+                <YAxis stroke="#64748B" fontSize={12} tickLine={false} axisLine={false} />
+                <Tooltip cursor={{ fill: '#F1F5F9' }} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                <Legend iconType="circle" />
+                <Bar dataKey="Jumlah Siswa" fill="#0f172a" radius={[4, 4, 0, 0]} maxBarSize={60} />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="w-full h-full flex flex-col items-center justify-center text-slate-400">
+              <FileText className="w-12 h-12 mb-3 opacity-20" />
+              <p className="font-medium">Belum ada data grafik histori tes siswa saat ini.</p>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

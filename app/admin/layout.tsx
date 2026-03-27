@@ -34,8 +34,8 @@ function AdminSidebar({ isOpen, setIsOpen }: SidebarProps) {
     <>
       {/* Overlay untuk mobile / tablet saat sidebar terbuka */}
       {isOpen && (
-        <div 
-          className="lg:hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 transition-opacity" 
+        <div
+          className="lg:hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 transition-opacity"
           onClick={() => setIsOpen(false)}
         />
       )}
@@ -62,8 +62,8 @@ function AdminSidebar({ isOpen, setIsOpen }: SidebarProps) {
           <ul className="space-y-2">
             {navItems.map((item) => (
               <li key={item.label}>
-                <Link 
-                  href={item.href} 
+                <Link
+                  href={item.href}
                   onClick={() => setIsOpen(false)}
                   className={`flex items-center p-3 rounded-xl transition-all font-medium ${pathname === item.href ? 'bg-slate-900 text-white shadow-md shadow-slate-900/20' : 'hover:bg-slate-50 text-slate-600 hover:text-slate-900'}`}
                 >
@@ -73,28 +73,26 @@ function AdminSidebar({ isOpen, setIsOpen }: SidebarProps) {
               </li>
             ))}
 
-            <li className="my-2 border-t border-slate-100 pt-2" />
-
             {/* Dropdown Manajemen Pengguna */}
             <li>
               <button
                 onClick={() => setIsUserOpen(!isUserOpen)}
-                className={`w-full flex items-center justify-between p-3 rounded-xl transition-all font-medium ${pathname.includes('/admin/users') ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}
+                className={`w-full flex items-center justify-between p-3 rounded-xl transition-all font-medium text-left ${pathname.includes('/admin/users') ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}
               >
                 <div className="flex items-center">
-                  <Users className={`w-5 h-5 mr-3 ${pathname.includes('/admin/users') ? 'text-slate-900' : 'text-slate-400'}`} />
+                  <Users className={`w-5 h-5 mr-3 shrink-0 ${pathname.includes('/admin/users') ? 'text-slate-900' : 'text-slate-400'}`} />
                   <span>Manajemen Pengguna</span>
                 </div>
-                {isUserOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                {isUserOpen ? <ChevronDown className="w-4 h-4 shrink-0" /> : <ChevronRight className="w-4 h-4 shrink-0" />}
               </button>
               {isUserOpen && (
                 <ul className="mt-2 ml-8 space-y-1">
                   {userSubItems.map((sub) => (
                     <li key={sub.label}>
-                      <Link 
-                        href={sub.href} 
+                      <Link
+                        href={sub.href}
                         onClick={() => setIsOpen(false)}
-                        className={`block p-2 text-sm rounded-md transition-colors ${pathname === sub.href ? 'text-slate-900 font-bold' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'}`}
+                        className={`block text-left p-2 text-sm rounded-md transition-colors ${pathname === sub.href ? 'text-slate-900 font-bold' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'}`}
                       >
                         {sub.label}
                       </Link>
@@ -106,8 +104,8 @@ function AdminSidebar({ isOpen, setIsOpen }: SidebarProps) {
 
             {/* Menu Hak Akses / Role */}
             <li>
-              <Link 
-                href="/admin/role" 
+              <Link
+                href="/admin/role"
                 onClick={() => setIsOpen(false)}
                 className={`flex items-center p-3 rounded-xl transition-all font-medium ${pathname.includes('/admin/role') ? 'bg-slate-900 text-white shadow-md shadow-slate-900/20' : 'hover:bg-slate-50 text-slate-600 hover:text-slate-900'}`}
               >
@@ -192,7 +190,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden relative">
       <AdminSidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
-      
+
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <AdminHeader toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} />
         <main className="flex-1 overflow-x-hidden overflow-y-auto bg-slate-50 p-4 lg:p-8">

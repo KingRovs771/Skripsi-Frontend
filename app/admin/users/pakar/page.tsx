@@ -25,16 +25,14 @@ interface Pakar {
   nomor_sip?: string;
   spesialisasi?: string;
   jenis_spesialis?: string;
-  // Foto
   photo_url?: string;
   foto?: string;
-  photo_file?: string; // kadang backend mengembalikan base64
+  photo_file?: string;
 }
 
 const getUid = (p: Pakar): string =>
   p.pakar_uid ?? p.user_uid ?? p.uid ?? String(p.id ?? '');
 
-/** Ambil URL foto — toleran terhadap berbagai field name */
 const getPhotoSrc = (p: Pakar): string | null => {
   const raw = p.photo_url ?? p.foto ?? null;
   if (!raw) return null;
@@ -42,7 +40,6 @@ const getPhotoSrc = (p: Pakar): string | null => {
   return `${API_BASE}${raw}`;
 };
 
-/** Avatar: foto asli atau inisial nama */
 function PakarAvatar({ pakar }: { pakar: Pakar }) {
   const [imgError, setImgError] = React.useState(false);
   const src = getPhotoSrc(pakar);

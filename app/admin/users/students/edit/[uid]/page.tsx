@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
-import { ArrowLeft, Save, Loader2, Search, CheckCircle2, Hash, GraduationCap, Lock } from 'lucide-react';
+import { ArrowLeft, Save, Loader2, Search, CheckCircle2, Hash, GraduationCap, Lock, Mail } from 'lucide-react';
 import { fetchApi } from '@/lib/api';
 import { toast } from 'sonner';
 
@@ -21,13 +21,13 @@ export default function EditSiswa() {
   const [loadingSubmit, setLoadingSubmit] = useState(false);
 
   const [formData, setFormData] = useState({
+    role_uid: '',
     nisn: '',
     nama_lengkap: '',
     no_hp: '',
     alamat: '',
     email: '',
-    password: '',        // kosong = tidak ganti password
-    jenjang: '',
+    jenjang_pendidikan: '',
     kelas: '',
     npsn: '',
   });
@@ -54,18 +54,18 @@ export default function EditSiswa() {
     if (!studentUid) return;
     const fetchStudent = async () => {
       try {
-        const res = await fetchApi(`/api/student/admin/getStudent/${studentUid}`);
+        const res = await fetchApi(`/api/users/getStudentsById/${studentUid}`);
         const json = await res.json().catch(() => ({}));
         if (res.ok) {
           const d = json.Data || json.data || json;
           setFormData({
+            role_uid: d.role_uid ?? '',
             nisn: d.nisn ?? '',
             nama_lengkap: d.nama_lengkap ?? '',
             no_hp: d.no_hp ?? '',
             alamat: d.alamat ?? '',
             email: d.email ?? '',
-            password: '',
-            jenjang: d.jenjang ?? '',
+            jenjang_pendidikan: d.jenjang_pendidikan ?? '',
             kelas: d.kelas ?? '',
             npsn: String(d.npsn ?? ''),
           });
@@ -73,7 +73,7 @@ export default function EditSiswa() {
           if (d.nama_sekolah || d.npsn) {
             setSelectedSchool({
               npsn: String(d.npsn ?? ''),
-              nama_sekolah: d.nama_sekolah ?? '',
+              nama_sekolah: d.nama_sekolah ?? d.npsn,
             });
             setSearchQuery(d.nama_sekolah ?? String(d.npsn ?? ''));
           }
@@ -139,26 +139,26 @@ export default function EditSiswa() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.npsn) { toast.warning('Pilih sekolah terlebih dahulu'); return; }
+    if (!formData.role_uid) { toast.error('Fatal: Role UID siswa tidak ditemukan dari database!'); return; }
 
     setLoadingSubmit(true);
     try {
-      // Kirim password hanya jika diisi
-      const payload: any = { ...formData };
-      if (!payload.password) delete payload.password;
+      const payload = { ...formData };
 
-      const res = await fetchApi(`/api/student/admin/updateStudent/${studentUid}`, {
+      const res = await fetchApi(`/api/users/updateStudents/${studentUid}`, {
         method: 'PUT',
         body: JSON.stringify(payload),
       });
+
       const json = await res.json().catch(() => ({}));
       if (res.ok) {
-        toast.success('Data siswa berhasil diperbarui!');
+        toast.success('Data individu siswa berhasil diselaraskan!');
         router.push('/admin/users/students');
       } else {
-        toast.error(json.Message || json.message || json.error || 'Gagal memperbarui data siswa');
+        toast.error(json.error || json.Message || 'Gagal memperbarui data siswa');
       }
     } catch {
-      toast.error('Koneksi ke server gagal');
+      toast.error('Server Unreachable. Koneksi terputus.');
     } finally {
       setLoadingSubmit(false);
     }
@@ -170,7 +170,7 @@ export default function EditSiswa() {
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
           <Loader2 className="w-8 h-8 animate-spin mx-auto text-slate-400 mb-3" />
-          <p className="text-sm text-slate-500">Memuat data siswa...</p>
+          <p className="text-sm font-medium text-slate-500">Membongkar arsip siswa...</p>
         </div>
       </div>
     );
@@ -180,62 +180,66 @@ export default function EditSiswa() {
   return (
     <div className="max-w-4xl mx-auto space-y-6 pb-20">
       {/* Back */}
-      <Link href="/admin/users/students" className="flex items-center text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors w-fit">
+      <Link href="/admin/users/students" className="flex items-center text-sm font-bold text-slate-400 hover:text-slate-900 transition-colors w-fit">
         <ArrowLeft className="w-4 h-4 mr-2" /> Kembali ke Daftar Siswa
       </Link>
 
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Edit Data Siswa</h1>
-        <p className="text-slate-500 text-sm mt-1">Perbarui informasi siswa. Kosongkan password jika tidak ingin menggantinya.</p>
+        <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Perbarui Biodata Siswa</h1>
+        <p className="text-slate-500 text-sm mt-1 font-medium">Lakukan sinkronisasi silang bila terdapat pemutakhiran jenjang sekolah maupun identitas KTP.</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-        <div className="p-8 space-y-8">
+      <form onSubmit={handleSubmit} className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden">
+        <div className="p-8 space-y-10">
 
           {/* ── IDENTITAS ── */}
-          <section className="space-y-5">
-            <h2 className="text-sm font-semibold text-slate-900 flex items-center gap-2 pb-2 border-b border-slate-100">
-              <Hash className="w-4 h-4 text-blue-600" /> Identitas Siswa
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-slate-700">NISN (10 Digit)</label>
+          <section className="space-y-6">
+            <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
+              <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center">
+                <Hash className="w-4 h-4 text-blue-600" />
+              </div>
+              <h2 className="text-base font-bold text-slate-900">Identitas Diri</h2>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-slate-700">Nomor Induk Siswa Nasional (NISN)</label>
                 <input
-                  className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm"
-                  placeholder="0092xxxxxx"
-                  maxLength={10}
+                  className="w-full px-4 py-3 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm font-medium"
+                  placeholder="Ketik 10 Digit NISN Resmi..."
+                  maxLength={15}
                   required
                   value={formData.nisn}
                   onChange={set('nisn')}
                 />
               </div>
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-slate-700">Nama Lengkap</label>
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-slate-700">Nama Terang Lengkap</label>
                 <input
-                  className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm"
-                  placeholder="Rizky Ramadhan"
+                  className="w-full px-4 py-3 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm font-medium"
+                  placeholder="Cth: Budi Santoso..."
                   required
                   value={formData.nama_lengkap}
                   onChange={set('nama_lengkap')}
                 />
               </div>
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-slate-700">Nomor WhatsApp</label>
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-slate-700">Nomor WhatsApp Aktif</label>
                 <input
-                  className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm"
-                  placeholder="0821xxxxxxxx"
+                  className="w-full px-4 py-3 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm font-medium"
+                  placeholder="08xxxxxxxxxx"
                   type="tel"
                   required
                   value={formData.no_hp}
                   onChange={set('no_hp')}
                 />
               </div>
-              <div className="space-y-1.5 md:col-span-2">
-                <label className="text-sm font-medium text-slate-700">Alamat</label>
+              <div className="space-y-2 h-full">
+                <label className="text-sm font-bold text-slate-700">Domisili Tempat Tinggal</label>
                 <textarea
-                  rows={2}
-                  className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm resize-none"
-                  placeholder="Jl. Merdeka No. 1, Sragen"
+                  rows={1}
+                  className="w-full h-[46px] px-4 py-3 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm font-medium resize-none overflow-hidden block"
+                  placeholder="Nama jalan RT/RW..."
                   required
                   value={formData.alamat}
                   onChange={set('alamat')}
@@ -245,24 +249,27 @@ export default function EditSiswa() {
           </section>
 
           {/* ── AKADEMIK ── */}
-          <section className="space-y-5">
-            <h2 className="text-sm font-semibold text-slate-900 flex items-center gap-2 pb-2 border-b border-slate-100">
-              <GraduationCap className="w-4 h-4 text-blue-600" /> Informasi Akademik
-            </h2>
+          <section className="space-y-6">
+            <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
+              <div className="w-8 h-8 rounded-full bg-violet-50 flex items-center justify-center">
+                <GraduationCap className="w-4 h-4 text-violet-600" />
+              </div>
+              <h2 className="text-base font-bold text-slate-900">Institusi & Akademik</h2>
+            </div>
 
             {/* School Search */}
-            <div className="space-y-1.5 relative" ref={dropdownRef}>
-              <label className="text-sm font-medium text-slate-700">
-                Sekolah
+            <div className="space-y-2 relative" ref={dropdownRef}>
+              <label className="text-sm font-bold text-slate-700 flex justify-between">
+                <span>Sekolah Tempat Belajar</span>
                 {selectedSchool && (
-                  <span className="ml-2 text-xs text-green-600 font-normal">✓ NPSN: {selectedSchool.npsn}</span>
+                  <span className="text-xs text-green-600">✓ Valid Terpilih NPSN: {selectedSchool.npsn}</span>
                 )}
               </label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+              <div className="relative group">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-blue-500 transition-colors pointer-events-none" />
                 <input
-                  className="w-full pl-9 pr-9 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm"
-                  placeholder="Ketik nama atau NPSN sekolah..."
+                  className="w-full pl-11 pr-11 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm font-medium placeholder:text-slate-400 shadow-sm"
+                  placeholder="Ketik lalu pilih nama atau NPSN sekolah..."
                   value={searchQuery}
                   onChange={(e) => {
                     setSearchQuery(e.target.value);
@@ -270,46 +277,50 @@ export default function EditSiswa() {
                   }}
                   autoComplete="off"
                 />
-                {searchingSchool && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-slate-400" />}
-                {selectedSchool && !searchingSchool && <CheckCircle2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-green-500" />}
+                {searchingSchool && <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-blue-500" />}
+                {selectedSchool && !searchingSchool && <CheckCircle2 className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-green-500" />}
               </div>
               {showDropdown && (
-                <div className="absolute z-50 top-full mt-1 left-0 right-0 bg-white border border-slate-200 rounded-xl shadow-lg max-h-52 overflow-y-auto">
+                <div className="absolute z-50 top-full mt-2 left-0 right-0 bg-white border border-slate-200 rounded-2xl shadow-xl max-h-60 overflow-y-auto overflow-hidden animate-in fade-in slide-in-from-top-2">
                   {schoolResults.map((s) => (
                     <button
                       key={s.npsn}
                       type="button"
                       onClick={() => handleSelectSchool(s)}
-                      className="w-full text-left px-4 py-3 text-sm hover:bg-slate-50 flex justify-between items-center border-b border-slate-100 last:border-0 transition-colors"
+                      className="w-full text-left px-5 py-3.5 text-sm hover:bg-slate-50 flex justify-between items-center border-b border-slate-100 last:border-0 transition-colors"
                     >
-                      <span className="font-medium text-slate-900">{s.nama_sekolah}</span>
-                      <span className="text-xs bg-slate-100 px-2 py-0.5 rounded text-slate-500 ml-2 shrink-0">{s.npsn}</span>
+                      <span className="font-bold text-slate-800">{s.nama_sekolah}</span>
+                      <span className="text-xs bg-slate-100 px-2 py-1 rounded bg-slate-200/50 text-slate-600 shrink-0 font-medium ml-4 tracking-wider">NPSN: {s.npsn}</span>
                     </button>
                   ))}
+                  {schoolResults.length === 0 && !searchingSchool && searchQuery.length >= 3 && (
+                    <div className="p-4 text-center text-sm text-slate-500 font-medium">Berdasarkan hasil pencarian, tidak ada sekolah yang ditemukan.</div>
+                  )}
                 </div>
               )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-slate-700">Jenjang</label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-slate-700">Tingkat Pendidikan</label>
                 <select
                   required
-                  className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm bg-white"
-                  value={formData.jenjang}
-                  onChange={set('jenjang')}
+                  className="w-full px-4 py-3 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm font-medium appearance-none"
+                  value={formData.jenjang_pendidikan}
+                  onChange={set('jenjang_pendidikan')}
+                  style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%2364748B\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'%3E%3C/path%3E%3C/svg%3E")', backgroundPosition: 'right 1rem center', backgroundRepeat: 'no-repeat', backgroundSize: '1.2em 1.2em' }}
                 >
-                  <option value="">Pilih Jenjang</option>
-                  <option value="SMP">SMP</option>
-                  <option value="SMA">SMA</option>
-                  <option value="SMK">SMK</option>
+                  <option value="" disabled>-- Tentukan Jenjang --</option>
+                  <option value="SMP">Tingkat Pertama (SMP / MTs)</option>
+                  <option value="SMA">Tingkat Atas (SMA / MA)</option>
+                  <option value="SMK">Tingkat Atas Kejuruan (SMK)</option>
                 </select>
               </div>
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-slate-700">Kelas</label>
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-slate-700">Rombongan Belajar (Kelas)</label>
                 <input
-                  className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm"
-                  placeholder="Contoh: XII RPL 1"
+                  className="w-full px-4 py-3 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm font-medium"
+                  placeholder="Contoh: XII IPA 2"
                   required
                   value={formData.kelas}
                   onChange={set('kelas')}
@@ -319,54 +330,47 @@ export default function EditSiswa() {
           </section>
 
           {/* ── AKSES LOGIN ── */}
-          <section className="space-y-5">
-            <h2 className="text-sm font-semibold text-slate-900 flex items-center gap-2 pb-2 border-b border-slate-100">
-              <Lock className="w-4 h-4 text-blue-600" /> Akses Login
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-slate-700">Email Siswa</label>
-                <input
-                  type="email"
-                  className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm"
-                  placeholder="siswa@mail.com"
-                  required
-                  value={formData.email}
-                  onChange={set('email')}
-                />
+          <section className="space-y-6">
+            <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
+              <div className="w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center">
+                <Mail className="w-4 h-4 text-emerald-600" />
               </div>
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-slate-700">
-                  Password Baru
-                  <span className="ml-1 text-xs text-slate-400 font-normal">(kosongkan jika tidak diganti)</span>
-                </label>
-                <input
-                  type="password"
-                  className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm"
-                  placeholder="••••••••"
-                  value={formData.password}
-                  onChange={set('password')}
-                />
-              </div>
+              <h2 className="text-base font-bold text-slate-900">Kredensial Login</h2>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-bold text-slate-700">Alamat Surel (Email) Siswa</label>
+              <input
+                type="email"
+                className="w-full px-4 py-3 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm font-medium"
+                placeholder="nama.siswa@mail.com"
+                required
+                value={formData.email}
+                onChange={set('email')}
+              />
+              <p className="text-xs font-medium text-amber-600 flex items-center mt-1">
+                Perhatian: Ubah email berarti akun login bagi siswa ini akan berubah.
+                Sandi tidak dapat diubah dari dasbor admin untuk menjaga privasi enkripsi JWT.
+              </p>
             </div>
           </section>
         </div>
 
         {/* Footer Aksi */}
-        <div className="px-8 py-5 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-3">
+        <div className="px-8 py-5 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-end gap-3 rounded-b-3xl">
           <Link
             href="/admin/users/students"
-            className="px-5 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-xl transition-all"
+            className="w-full sm:w-auto px-6 py-3 text-sm font-bold text-slate-600 hover:bg-slate-200 hover:text-slate-900 rounded-xl transition-all text-center"
           >
-            Batal
+            Batalkan Edit
           </Link>
           <button
             type="submit"
             disabled={loadingSubmit}
-            className="bg-slate-900 text-white px-6 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-slate-800 disabled:bg-slate-300 transition-all shadow-sm"
+            className="w-full sm:w-auto bg-slate-900 text-white px-8 py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2 hover:bg-slate-800 disabled:bg-slate-400 disabled:cursor-not-allowed transition-all shadow-lg shadow-slate-900/10 active:scale-95"
           >
-            {loadingSubmit ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            Simpan Perubahan
+            {loadingSubmit ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+            Terapkan Skema Baru
           </button>
         </div>
       </form>

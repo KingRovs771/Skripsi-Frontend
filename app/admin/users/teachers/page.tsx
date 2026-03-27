@@ -11,6 +11,7 @@ import { Plus, Search, Pencil, Trash2, Loader2, School, GraduationCap, Mail, Use
 
 // ── Tipe Data ──────────────────────────────────────────────────────────────────
 interface Teacher {
+  teachers_uid?: string;
   teacher_uid?: string;
   user_uid?: string;
   uid?: string;
@@ -25,7 +26,7 @@ interface Teacher {
 }
 
 const getUid = (t: Teacher): string =>
-  t.teacher_uid ?? t.user_uid ?? t.uid ?? String(t.id ?? '');
+  t.teachers_uid ?? t.teacher_uid ?? t.user_uid ?? t.uid ?? String(t.id ?? '');
 
 export default function ManajemenGuru() {
   const [teachers, setTeachers] = useState<Teacher[]>([]);
