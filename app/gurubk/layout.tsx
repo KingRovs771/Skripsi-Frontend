@@ -1,9 +1,11 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { LayoutDashboard, FileCheck, LogOut, MessageCircleQuestionMark, Menu, X } from 'lucide-react';
+import { usePathname, useRouter } from 'next/navigation';
+import { LayoutDashboard, FileCheck, LogOut, MessageCircleQuestionMark, Menu, X, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { fetchApi } from '@/lib/api';
+import { toast } from 'sonner';
 
 function AdminSidebar({ isOpen, setIsOpen }: { isOpen: boolean, setIsOpen: (val: boolean) => void }) {
   const pathname = usePathname();
@@ -77,6 +79,33 @@ function AdminSidebar({ isOpen, setIsOpen }: { isOpen: boolean, setIsOpen: (val:
 }
 
 function AdminHeader({ toggleSidebar }: { toggleSidebar: () => void }) {
+  const router = useRouter();
+  const [userName, setUserName] = useState('Teacher');
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  useEffect(() => {
+    // 1. Fetch Profile Name
+    const fetchProfile = async () => {
+      try {
+        const res = await fetchApi('/api/profileTeachers', { method: 'GET' });
+        const json = await res.json().catch(() => ({}));
+        if (res.ok && json.Data && json.Data.nama_lengkap) {
+          setUserName(json.Data.nama_lengkap);
+        }
+      } catch (err) {
+        console.warn('Gagal memuat profil', err);
+      }
+    };
+    fetchProfile();
+  }, []);
+
+  const handleLogout = () => {
+    setIsLoggingOut(true);
+    localStorage.removeItem('token');
+    toast.success('Berhasil logout.');
+    router.push('/auth/login');
+  };
+
   return (
     <header className="bg-white border-b border-slate-200 h-16 flex items-center justify-between lg:justify-end px-4 lg:px-6 shadow-sm z-30 relative">
       <button onClick={toggleSidebar} className="lg:hidden p-2 text-slate-500 hover:text-slate-900 rounded-lg bg-slate-50 transition-colors">
@@ -84,14 +113,14 @@ function AdminHeader({ toggleSidebar }: { toggleSidebar: () => void }) {
       </button>
 
       <div className="flex items-center space-x-3 lg:space-x-4">
-        <span className="text-xs lg:text-sm font-semibold text-slate-700 hidden sm:block">Welcome, Teacher!</span>
-        <Button variant="outline" size="sm" className="hidden sm:flex border-slate-200 text-slate-600 hover:bg-slate-50">
-          <LogOut className="w-4 h-4 mr-2" />
+        <span className="text-xs lg:text-sm font-semibold text-slate-700 hidden sm:block">Welcome, {userName}!</span>
+        <Button onClick={handleLogout} disabled={isLoggingOut} variant="outline" size="sm" className="hidden sm:flex border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-red-600 transition-colors">
+          {isLoggingOut ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <LogOut className="w-4 h-4 mr-2" />}
           Logout
         </Button>
         {/* Tombol icon log out minimalis utuk mobile */}
-        <Button variant="outline" size="icon" className="sm:hidden border-slate-200 text-slate-600">
-          <LogOut className="w-4 h-4" />
+        <Button onClick={handleLogout} disabled={isLoggingOut} variant="outline" size="icon" className="sm:hidden border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-red-600 transition-colors">
+           {isLoggingOut ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogOut className="w-4 h-4" />}
         </Button>
       </div>
     </header>

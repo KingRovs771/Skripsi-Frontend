@@ -56,9 +56,8 @@ export default function LoginPage() {
         console.warn('Token JWT masih belum berhasil ditangkap dari JSON Backend!', data);
       }
 
-      toast.success('Login Guru BK berhasil!');
-      // Arahkan ke dashboard Guru BK sesuai di lib/auth.ts
-      router.push('/gurubk/dashboard');
+      toast.success('Login berhasil!');
+      router.push('/gurubk/home');
 
     } catch (error: any) {
       toast.error(error.message || 'Terjadi kesalahan sistem');

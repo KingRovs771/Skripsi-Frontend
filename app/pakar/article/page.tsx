@@ -14,8 +14,12 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 interface ArticleListResponse {
   article_uid: string;
   judul_article: string;
-  author: string;
+  category_uid: string;
   category_name: string;
+  author: string;
+  status: number;
+  status_label: string;
+  thumbnail_url: string;
   created_at: string;
 }
 
@@ -32,7 +36,7 @@ export default function PakarArticlePage() {
   const fetchArticles = async () => {
     setLoadingInitial(true);
     try {
-      const res = await fetchApi('/api/article/getAllArticles');
+      const res = await fetchApi('/api/artikelpakar/getAllArtikel');
       const json = await res.json().catch(() => ({}));
       if (res.ok) {
         setArticles(json.data || json.Data || []);
@@ -68,7 +72,7 @@ export default function PakarArticlePage() {
       const json = await res.json().catch(() => ({}));
 
       if (res.ok || json.Status === 'Success') {
-        toast.success('Artikel berhasil dihapus');
+        toast.success('Artikel berhasil dihapus!');
         setArticles((prev) => prev.filter((article) => article.article_uid !== selectedUid));
       } else {
         toast.error(json.Message || json.error || 'Gagal menghapus artikel');
@@ -79,7 +83,7 @@ export default function PakarArticlePage() {
       setLoadingDelete(false);
       setOpenAlert(false);
       setSelectedUid(null);
-    }
+    } // Ensure finally runs exactly here
   };
 
   return (
@@ -101,48 +105,82 @@ export default function PakarArticlePage() {
           <Table>
             <TableHeader className="bg-slate-50/50">
               <TableRow>
-                <TableHead className="py-5 font-bold text-slate-700 pl-6">Judul Artikel</TableHead>
-                <TableHead className="font-bold text-slate-700">Penulis</TableHead>
+                <TableHead className="font-bold text-slate-700 py-4 pl-6">Thumbnail & Judul</TableHead>
                 <TableHead className="font-bold text-slate-700">Kategori</TableHead>
+                <TableHead className="font-bold text-slate-700">Status</TableHead>
                 <TableHead className="text-right px-6 font-bold text-slate-700">Aksi</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loadingInitial ? (
-                 <TableRow>
-                   <TableCell colSpan={4} className="h-40 text-center text-slate-400">
-                     <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3" />
-                     Memuat data artikel...
-                   </TableCell>
-                 </TableRow>
+                <TableRow>
+                  <TableCell colSpan={4} className="h-40 text-center text-slate-400">
+                    <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3" />
+                    Memuat data artikel...
+                  </TableCell>
+                </TableRow>
               ) : articles.length > 0 ? (
-                articles.map((article, idx) => (
-                  <TableRow key={article.article_uid || idx} className="hover:bg-slate-50/50 transition-colors">
-                    <TableCell className="font-bold text-slate-900 py-4 pl-6 line-clamp-2 max-w-sm">
-                      {article.judul_article}
-                    </TableCell>
-                    <TableCell className="text-slate-600 font-medium">
-                      {article.author}
-                    </TableCell>
-                    <TableCell>
-                      <span className="px-3 py-1 bg-blue-50 text-blue-700 border border-blue-100 rounded-lg text-xs font-bold uppercase tracking-wide">
-                        {article.category_name}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-right px-6">
-                      <div className="flex justify-end gap-1">
-                        <Link href={`/pakar/article/edit/${article.article_uid}`}>
-                          <Button variant="ghost" size="icon" className="text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-all rounded-lg">
-                            <Pencil className="w-4 h-4" />
+                articles.map((article, idx) => {
+
+                  // Deteksi Real URL
+                  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+                  const isAbsolute = article.thumbnail_url?.startsWith('http');
+                  const validThumbnail = article.thumbnail_url ?
+                    (isAbsolute ? article.thumbnail_url : `${API_URL}${article.thumbnail_url}`)
+                    : `${API_URL}/api/home/articles/${article.article_uid}/thumbnail`;
+
+                  return (
+                    <TableRow key={article.article_uid || idx} className="hover:bg-slate-50/50 transition-colors">
+                      <TableCell className="font-medium py-4 pl-6">
+                        <div className="flex items-center gap-4">
+                          <div className="w-20 h-14 rounded-lg bg-slate-100 overflow-hidden shrink-0 border border-slate-200 shadow-sm relative">
+                            <img
+                              src={validThumbnail}
+                              alt={article.judul_article}
+                              className="w-full h-full object-cover transition-opacity duration-300"
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                                e.currentTarget.parentElement!.innerHTML = '<div class="w-full h-full flex items-center justify-center text-slate-300 bg-slate-50"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="opacity-50"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></div>';
+                              }}
+                            />
+                          </div>
+                          <div className="flex flex-col gap-1 max-w-[300px]">
+                            <p className="line-clamp-2 text-sm font-bold text-slate-900 leading-snug">{article.judul_article}</p>
+                            <p className="text-xs text-slate-500 font-medium">Ditulis oleh: <span className="text-slate-700">{article.author || 'Pakar Sistem'}</span></p>
+                          </div>
+                        </div>
+                      </TableCell>
+
+                      <TableCell>
+                        <span className="px-3 py-1 bg-slate-100 text-slate-700 border border-slate-200 rounded-lg text-xs font-bold truncate max-w-[150px] inline-block shadow-sm">
+                          {article.category_name || '-'}
+                        </span>
+                      </TableCell>
+
+                      <TableCell>
+                        <span className={`px-2.5 py-1 text-[10px] font-black uppercase tracking-wider rounded-md ${article.status === 2 || article.status_label === 'Published'
+                            ? 'bg-emerald-100 text-emerald-700 border border-emerald-200'
+                            : 'bg-amber-100 text-amber-700 border border-amber-200'
+                          }`}>
+                          {article.status_label || (article.status === 2 ? 'Published' : 'Draft')}
+                        </span>
+                      </TableCell>
+
+                      <TableCell className="text-right px-6">
+                        <div className="flex justify-end gap-1">
+                          <Link href={`/pakar/article/edit/${article.article_uid}`}>
+                            <Button variant="ghost" size="icon" className="text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-all rounded-lg">
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                          </Link>
+                          <Button variant="ghost" size="icon" className="text-slate-400 hover:text-red-600 hover:bg-red-50 transition-all rounded-lg" onClick={() => triggerDelete(article.article_uid)}>
+                            <Trash2 className="w-4 h-4" />
                           </Button>
-                        </Link>
-                        <Button variant="ghost" size="icon" className="text-slate-400 hover:text-red-600 hover:bg-red-50 transition-all rounded-lg" onClick={() => triggerDelete(article.article_uid)}>
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
               ) : (
                 <TableRow>
                   <TableCell colSpan={4} className="text-center py-20 text-slate-400 font-medium">
@@ -169,9 +207,9 @@ export default function PakarArticlePage() {
           </AlertDialogHeader>
           <AlertDialogFooter className="mt-6 gap-2">
             <AlertDialogCancel className="border-slate-200 rounded-xl hover:bg-slate-50 font-medium text-slate-600">Batal</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={(e) => { e.preventDefault(); handleConfirmDelete(); }} 
-              disabled={loadingDelete} 
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); handleConfirmDelete(); }}
+              disabled={loadingDelete}
               className="bg-red-600 hover:bg-red-700 text-white rounded-xl font-medium px-6 transition-all shadow-sm"
             >
               {loadingDelete ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Ya, Hapus'}

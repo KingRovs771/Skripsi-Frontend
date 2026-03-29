@@ -39,7 +39,9 @@ export function getUserRole(): UserRole {
   const payload = decodeJwtPayload(token);
   if (!payload) return null;
 
+  // Baca payload Token JWT GORM (Sesuai struct CustomClaims di jwt.go backend)
   const role: string = (
+    payload.user_type ||
     payload.role ||
     payload.Role ||
     payload.user_role ||
@@ -47,23 +49,24 @@ export function getUserRole(): UserRole {
     ''
   ).toString().toLowerCase();
 
-  if (role === 'administrator') return 'administrator';
+  // Mapping string token backend ke tipe UserRole internal
+  if (role === 'administrator' || role === 'admin') return 'administrator';
   if (role === 'pakar') return 'pakar';
-  if (role === 'gurubk' || role === 'guru_bk' || role === 'guru bk') return 'gurubk';
-  if (role === 'siswa' || role === 'user') return 'siswa';
+  if (role === 'teachers' || role === 'teacher' || role === 'gurubk' || role === 'guru_bk') return 'gurubk';
+  if (role === 'students' || role === 'student' || role === 'siswa' || role === 'user') return 'siswa';
 
   return null;
 }
 
 /**
- * Dapatkan dashboard URL berdasarkan role
+ * Dapatkan dashboard URL berdasarkan role yang akurat
  */
 export function getDashboardUrl(role: UserRole): string {
   switch (role) {
     case 'administrator': return '/admin/dashboard';
-    case 'pakar': return '/pakar/dashboard';
-    case 'gurubk': return '/gurubk/dashboard';
-    case 'siswa': return '/siswa/dashboard';
+    case 'pakar': return '/pakar/home';
+    case 'gurubk': return '/gurubk/home';
+    case 'siswa': return '/student/home';
     default: return '/public';
   }
 }

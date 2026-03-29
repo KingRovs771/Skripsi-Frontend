@@ -123,6 +123,23 @@ function AdminSidebar({ isOpen, setIsOpen }: SidebarProps) {
 function AdminHeader({ toggleSidebar }: { toggleSidebar: () => void }) {
   const router = useRouter();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [userName, setUserName] = useState('Admin');
+
+  useEffect(() => {
+    // 1. Fetch Profile Name
+    const fetchProfile = async () => {
+      try {
+        const res = await fetchApi('/api/profileAdministrator', { method: 'GET' });
+        const json = await res.json().catch(() => ({}));
+        if (res.ok && json.Data && json.Data.nama_lengkap) {
+          setUserName(json.Data.nama_lengkap);
+        }
+      } catch (err) {
+        console.warn('Gagal memuat profil', err);
+      }
+    };
+    fetchProfile();
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -148,7 +165,7 @@ function AdminHeader({ toggleSidebar }: { toggleSidebar: () => void }) {
       </button>
 
       <div className="flex items-center space-x-3 lg:space-x-4 ml-auto">
-        <span className="text-xs lg:text-sm font-semibold text-slate-700 hidden sm:block">Welcome, Admin!</span>
+        <span className="text-xs lg:text-sm font-semibold text-slate-700 hidden sm:block">Welcome, {userName}!</span>
         <Button variant="outline" size="sm" onClick={handleLogout} disabled={isLoggingOut} className="hidden sm:flex border-slate-200 text-slate-600 hover:bg-slate-50">
           <LogOut className="w-4 h-4 mr-2" />
           {isLoggingOut ? 'Keluar...' : 'Logout'}

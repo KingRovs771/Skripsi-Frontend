@@ -1,210 +1,284 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { ArrowLeft, Save, Loader2, ImagePlus, X } from 'lucide-react';
+import { ArrowLeft, Save, Loader2, Image as ImageIcon, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { fetchApi } from '@/lib/api';
+import dynamic from 'next/dynamic';
+import 'react-quill-new/dist/quill.snow.css';
 
-export default function CreateArticlePage() {
+// Tipe data kategori sesuai model backend
+type Category = {
+  category_id: number;
+  category_uid: string;
+  name_category: string;
+  description: string;
+  created_at: string;
+  update_at: string;
+};
+
+// Dynamic import ReactQuill agar tidak error SSR di Next.js
+const ReactQuill = dynamic(() => import('react-quill-new'), { ssr: false });
+
+// Konfigurasi Toolbar ala Wordpress untuk Quill
+const quillModules = {
+  toolbar: [
+    [{ header: [1, 2, 3, false] }],
+    ['bold', 'italic', 'underline', 'strike', 'blockquote'],
+    [{ list: 'ordered' }, { list: 'bullet' }],
+    ['link', 'image'],
+    ['clean'], // Tombol hapus format
+  ],
+};
+
+export default function PakarCreateArticlePage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [categories, setCategories] = useState<{ category_uid: string; name_category: string }[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loadingCategories, setLoadingCategories] = useState(true);
+  const [categoryError, setCategoryError] = useState<string | null>(null);
 
-  // State Form
-  const [formData, setFormData] = useState({
-    judul_article: '',
-    isi_article: '',
-    author: '',
-    category_uid: '',
-  });
+  // Menyimpan data profile pakar (seperti nama_lengkap)
+  const [authorName, setAuthorName] = useState('Pakar Edukasi');
 
-  // State Gambar
-  const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
-  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
-
+  // Fetch data profile dan kategori saat mount
   useEffect(() => {
-    // Memuat daftar kategori
-    const loadCategories = async () => {
+    // 1. Fetch Categories
+    const fetchCategories = async () => {
       try {
-        const res = await fetchApi('/api/category/getAllCategories');
-        const json = await res.json().catch(() => ({}));
-        if (res.ok) {
-          setCategories(json.Data || json.data || []);
-        }
+        const res = await fetchApi('/categories/getAllCategories', { method: 'GET' });
+        if (!res.ok) throw new Error('Gagal memuat kategori');
+        const json = await res.json();
+        setCategories(json.data || json.Data || []);
       } catch (err) {
-        console.error('Failed fetching categories:', err);
+        setCategoryError('Gagal memuat kategori');
+        toast.error('Gagal memuat data kategori dari server');
+      } finally {
+        setLoadingCategories(false);
       }
     };
-    loadCategories();
-  }, []);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // 2. Fetch Profile Pakar untuk author
+    const fetchProfile = async () => {
+      try {
+        const res = await fetchApi('/api/profilePakars', { method: 'GET' });
+        const json = await res.json().catch(() => ({}));
+        if (res.ok && json.Data && json.Data.nama_lengkap) {
+          setAuthorName(json.Data.nama_lengkap);
+        }
+      } catch (err) {
+        console.warn('Gagal menarik profil Pakar', err);
+      }
+    };
+
+    fetchCategories();
+    fetchProfile();
+  }, []);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+
+  const [formData, setFormData] = useState({
+    title: '',
+    content: '',
+    category: '',
+    status: 1, // Default to Draft
+  });
+
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
+  // Fungsi untuk menangani perubahan gambar
+  const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 2 * 1024 * 1024) {
-        toast.error('Ukuran gambar maksimal 2MB');
+        toast.error('Ukuran gambar terlalu besar. Maksimal 2MB.');
         return;
       }
-      setThumbnailFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setThumbnailPreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+
+      setSelectedFile(file);
+      const previewUrl = URL.createObjectURL(file);
+      setImagePreview(previewUrl);
+      toast.info('Gambar berhasil dipilih');
     }
   };
 
+  // Fungsi untuk menghapus gambar yang dipilih
   const removeImage = () => {
-    setThumbnailFile(null);
-    setThumbnailPreview(null);
+    setSelectedFile(null);
+    setImagePreview(null);
+    toast.success('Gambar dihapus');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
 
-    if (!thumbnailFile) {
-      toast.error('Thumbnail artikel wajib diunggah!');
-      setLoading(false);
+    if (!formData.title || !formData.content || !formData.category) {
+      toast.warning('Mohon lengkapi seluruh isian data tulisan Anda.');
       return;
     }
 
+    setLoading(true);
+
+    const data = new FormData();
+    data.append('judul_article', formData.title);
+    data.append('isi_article', formData.content);
+    data.append('category_uid', formData.category);
+    data.append('author', authorName || 'Pakar Psikologi'); // Identitas dinamis dari server
+    data.append('status', formData.status.toString());
+
+    if (selectedFile) {
+      data.append('thumbnails', selectedFile);
+    }
+
     try {
-      // Artikel baru membutuhkan FormData karena tipe backend Golang membaca File
-      const payload = new FormData();
-      payload.append('judul_article', formData.judul_article);
-      payload.append('isi_article', formData.isi_article);
-      payload.append('author', formData.author);
-      payload.append('category_uid', formData.category_uid);
-      payload.append('thumbnails', thumbnailFile);
-
-      // Kita tidak memakai wrapper fetchApi langsung untuk 'Content-Type' 
-      // Supaya browser yg mengatur otomatis boundary multipart/form-data
-      const res = await fetchApi('/api/article/createArticle', {
+      const response = await fetchApi('/api/article/pakar/createArticles', {
         method: 'POST',
-        body: payload,
-      }, true); // Opsi true di fetchApi util biasanya mencegah injeksi headers JSON jika di-support
+        body: data,
+      });
 
-      const json = await res.json().catch(() => ({}));
+      const json = await response.json().catch(() => ({}));
 
-      if (res.ok || json.Status === 'Success') {
-        toast.success('Artikel berhasil dipublikasikan!');
+      if (response.ok || json.Status === 'Success') {
+        toast.success('Tulisan Artikel Anda berhasil diterbitkan!');
         router.push('/pakar/article');
       } else {
-        toast.error(json.Message || json.error || 'Gagal menyimpan artikel');
+        toast.error(json.error || json.Message || 'Gagal menyimpan artikel. Silakan cek kembali jaringan Anda.');
       }
     } catch (error) {
-      toast.error('Terjadi kesalahan jaringan.');
+      toast.error('Gagal mempublikasikan Artikel karena terputus dari Server.');
     } finally {
       setLoading(false);
     }
   };
 
-  const inputClass = "w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-900/20 focus:border-slate-900 outline-none transition-colors text-sm hover:border-slate-300";
-
   return (
-    <div className="max-w-4xl mx-auto p-4 space-y-6 pb-20 fade-in slide-in-from-bottom-4">
-      <Link href="/pakar/article" className="flex items-center text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors w-fit">
-        <ArrowLeft className="w-4 h-4 mr-2" /> Kembali ke Manajemen Artikel
-      </Link>
-
-      <div className="space-y-1">
-        <h1 className="text-3xl font-bold text-slate-900">Publikasi Artikel</h1>
-        <p className="text-sm font-medium text-slate-500">Tulis dan edarkan artikel terbaru ke beranda utama siswa.</p>
+    <div className="max-w-7xl mx-auto space-y-6 pb-12">
+      {/* Header */}
+      <div className="flex items-center space-x-4">
+        <Link href="/pakar/article" className="p-2 hover:bg-white rounded-full transition-colors border border-transparent hover:border-slate-200">
+          <ArrowLeft className="w-5 h-5 text-slate-600" />
+        </Link>
+        <div>
+          <h1 className="text-3xl font-bold text-slate-900">Mulai Tulis Artikel</h1>
+          <p className="text-slate-500 font-medium">Bagikan wawasan dan pengetahuan secara luas ke publik.</p>
+        </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="bg-white border border-slate-200 shadow-sm rounded-2xl overflow-hidden mt-6">
-        <div className="p-8 space-y-8">
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2 md:col-span-2">
-              <label className="text-sm font-bold text-slate-700">Judul Artikel</label>
-              <input 
-                type="text" 
-                className={`${inputClass} text-base font-semibold`} 
-                placeholder="Masukkan judul artikel yang menarik..." 
-                required 
-                value={formData.judul_article}
-                onChange={(e) => setFormData({ ...formData, judul_article: e.target.value })}
+      <form onSubmit={handleSubmit} className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+        <div className="xl:col-span-3 space-y-6">
+          <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-4">
+            {/* Input Judul */}
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-slate-700">Judul Artikel</label>
+              <input
+                type="text"
+                className="w-full px-4 py-3 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 transition-all font-medium text-slate-900"
+                placeholder="Ex: Menghadapi Kepanikan Berlebih saat Ujian Kelulusan..."
+                value={formData.title}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                required
               />
             </div>
 
+            {/* Upload Area */}
             <div className="space-y-2">
-              <label className="text-sm font-bold text-slate-700">Kategori Diagnosis Terkait</label>
-              <select 
-                className={inputClass} 
-                required 
-                value={formData.category_uid}
-                onChange={(e) => setFormData({ ...formData, category_uid: e.target.value })}
+              <label className="text-sm font-semibold text-slate-700">Thumbnail Cover Artikel</label>
+              <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-slate-200 border-dashed rounded-xl hover:border-slate-400 transition-colors bg-slate-50/50 relative">
+                {imagePreview ? (
+                  <div className="relative w-full text-center group">
+                    <img src={imagePreview} alt="Preview" className="max-h-64 mx-auto rounded-xl shadow-md object-cover transition-transform duration-300" />
+                    <button type="button" onClick={removeImage} className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full hover:bg-red-600 hover:scale-110 transition-all shadow-lg border-2 border-white">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-2 text-center">
+                    <div className="bg-white p-4 rounded-full w-fit mx-auto shadow-sm border border-slate-100">
+                      <ImageIcon className="h-8 w-8 text-slate-400" />
+                    </div>
+                    <div className="flex text-sm text-slate-600 justify-center">
+                      <label htmlFor="file-upload" className="relative cursor-pointer font-bold text-blue-600 hover:text-blue-700">
+                        <span>Pilih Berkas Gambar</span>
+                        <input id="file-upload" type="file" className="sr-only" accept="image/*" onChange={handleImageChange} />
+                      </label>
+                      <p className="pl-1 text-slate-500">atau seret file ke sini</p>
+                    </div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2">Format PNG/JPG Max 2 Megabytes</p>
+                  </div>
+                )}
+              </div>
+              <p className="text-xs font-medium text-slate-400 mt-1">Sertakan gambar thumbnail berkualitas agar memikat atensi audiens siswa.</p>
+            </div>
+
+            {/* Konten dengan Rich Text Editor */}
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-slate-700">Materi Artikel</label>
+              <div className="bg-white rounded-xl overflow-hidden border border-slate-200 focus-within:ring-2 focus-within:ring-slate-900 focus-within:border-transparent transition-all">
+                <ReactQuill
+                  theme="snow"
+                  modules={quillModules}
+                  value={formData.content}
+                  onChange={(content) => setFormData({ ...formData, content })}
+                  placeholder="Ketik seluruh pemikiran riset psikologi terdepan di sini..."
+                  className="min-h-[500px] [&>.ql-container]:min-h-[450px] [&>.ql-container]:text-base [&>.ql-editor]:min-h-[450px]"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Sidebar Pengaturan */}
+        <div className="space-y-6">
+          <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-5 sticky top-6">
+            <h3 className="font-bold text-slate-900 border-b border-slate-50 pb-3 text-lg">Konfigurasi Label</h3>
+
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-slate-700">Kategori Diagnosis</label>
+              <select
+                className="w-full p-3 border border-slate-200 rounded-lg bg-slate-50 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-slate-100 disabled:text-slate-400"
+                value={formData.category}
+                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                required
+                disabled={loadingCategories}
               >
-                <option value="" disabled>Pilih Kategori Kesehatan</option>
-                {categories.map((c) => (
-                  <option key={c.category_uid} value={c.category_uid}>{c.name_category}</option>
+                <option value="" disabled>
+                  {loadingCategories ? 'Sedang Sinkronisasi Kategori...' : categoryError ? 'Gagal memuat kategori' : 'Tentukan Opsi Kategori'}
+                </option>
+                {categories.map((cat) => (
+                  <option key={cat.category_uid} value={cat.category_uid}>
+                    {cat.name_category}
+                  </option>
                 ))}
               </select>
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-bold text-slate-700">Penulis (Author)</label>
-              <input 
-                type="text" 
-                className={inputClass} 
-                placeholder="Nama Anda atau Instansi..." 
-                required 
-                value={formData.author}
-                onChange={(e) => setFormData({ ...formData, author: e.target.value })}
-              />
+              <label className="text-sm font-semibold text-slate-700">Visibilitas Status</label>
+              <select
+                className="w-full p-3 border border-slate-200 rounded-lg bg-slate-50 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none"
+                value={formData.status}
+                onChange={(e) => setFormData({ ...formData, status: Number(e.target.value) })}
+              >
+                <option value="1">Draft (Simpan Sementara)</option>
+                <option value="2">Publish (Tayangkan Publik)</option>
+              </select>
             </div>
 
-            <div className="space-y-4 md:col-span-2">
-              <label className="text-sm font-bold text-slate-700 block">Thumbnail Cover</label>
-              
-              {!thumbnailPreview ? (
-                <label className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-slate-300 rounded-2xl bg-slate-50 hover:bg-slate-100 hover:border-slate-400 cursor-pointer transition-all">
-                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                    <div className="p-4 bg-white rounded-full shadow-sm mb-3">
-                      <ImagePlus className="w-6 h-6 text-slate-500" />
-                    </div>
-                    <p className="mb-1 text-sm text-slate-600 font-medium"><span className="font-bold text-blue-600">Klik untuk unggah</span> atau seret file</p>
-                    <p className="text-xs text-slate-400">PNG, JPG atau WEBP (Maks. 2MB)</p>
-                  </div>
-                  <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
-                </label>
-              ) : (
-                <div className="relative w-full max-w-sm rounded-2xl overflow-hidden border border-slate-200 shadow-sm group">
-                  <img src={thumbnailPreview} alt="Preview" className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-500" />
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <button type="button" onClick={removeImage} className="bg-red-500 text-white p-2 rounded-full hover:bg-red-600 hover:scale-110 transition-all shadow-lg">
-                      <X className="w-5 h-5" />
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-2 md:col-span-2">
-              <label className="text-sm font-bold text-slate-700 block">Konten Isi Artikel</label>
-              <textarea 
-                className={`${inputClass} min-h-[300px] resize-y leading-relaxed`} 
-                placeholder="Mulai menulis konten edukasi psikologi di sini..." 
-                required 
-                value={formData.isi_article}
-                onChange={(e) => setFormData({ ...formData, isi_article: e.target.value })}
-              />
+            <div className="space-y-3 pt-6 border-t border-slate-100">
+              <button type="submit" disabled={loading} className="w-full flex justify-center items-center bg-slate-900 text-white p-3.5 rounded-xl font-bold hover:bg-slate-800 disabled:bg-slate-300 transition-all active:scale-95 shadow-sm shadow-slate-900/10">
+                {loading ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <>
+                    <Save className="w-5 h-5 mr-2" /> Simpan Perubahan
+                  </>
+                )}
+              </button>
+              <Link href="/pakar/article" className="block text-center w-full p-3 border border-slate-200 rounded-xl hover:bg-slate-50 text-sm font-bold text-slate-600 transition-colors">
+                Batalkan Aksi
+              </Link>
             </div>
           </div>
-        </div>
-
-        <div className="px-8 py-5 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-3">
-          <Link href="/pakar/article">
-            <Button variant="ghost" className="text-slate-600 font-medium hover:bg-slate-200 h-11 px-6 rounded-xl">Batal</Button>
-          </Link>
-          <Button type="submit" disabled={loading} className="bg-slate-900 hover:bg-slate-800 text-white font-medium h-11 px-8 rounded-xl shadow-sm transition-all active:scale-95">
-            {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />} 
-            Publikasi
-          </Button>
         </div>
       </form>
     </div>

@@ -56,9 +56,8 @@ export default function LoginPage() {
         console.warn('Token JWT masih belum berhasil ditangkap dari JSON Backend!', data);
       }
 
-      toast.success('Login Pakar berhasil!');
-      // Arahkan ke dashboard Pakar sesuai di lib/auth.ts
-      router.push('/pakar/dashboard');
+      toast.success('Login berhasil!');
+      router.push(getDashboardUrl('pakar'));
 
     } catch (error: any) {
       toast.error(error.message || 'Terjadi kesalahan sistem');
