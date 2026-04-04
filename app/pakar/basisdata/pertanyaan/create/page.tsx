@@ -6,9 +6,30 @@ import Link from 'next/link';
 import { fetchApi } from '@/lib/api';
 import { toast } from 'sonner';
 
+interface TypeTes {
+  category_penyakit_uid: string;
+  nama_category: string;
+}
+
 export default function CreatePertanyaanPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [typeTesList, setTypeTesList] = useState<TypeTes[]>([]);
+
+  React.useEffect(() => {
+    const fetchTypeTes = async () => {
+      try {
+        const res = await fetchApi('/api/tesType/getAllTypeTes');
+        const json = await res.json().catch(() => ({}));
+        if (res.ok) {
+          setTypeTesList(json.Data || json.data || []);
+        }
+      } catch (e) {
+        toast.error('Gagal memuat kategori tes dari server');
+      }
+    };
+    fetchTypeTes();
+  }, []);
 
   const [formData, setFormData] = useState({
     kode_pertanyaan: '',
@@ -30,7 +51,7 @@ export default function CreatePertanyaanPage() {
       };
 
       // API Golang menggunakan controller SavePertanyaan
-      const res = await fetchApi('/api/pertanyaan/savePertanyaan', {
+      const res = await fetchApi('/api/pertanyaan/createPertanyaan', {
         method: 'POST',
         body: JSON.stringify(payload),
       });
@@ -69,43 +90,48 @@ export default function CreatePertanyaanPage() {
 
       <form onSubmit={handleSubmit} className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
         <div className="p-8 space-y-8">
-          
+
           <section className="space-y-6">
             <h2 className="text-base font-semibold text-slate-900 flex items-center gap-2 pb-3 border-b border-slate-100">
               <MessageSquare className="w-5 h-5 text-blue-600" /> Detail Pertanyaan
             </h2>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-slate-700">Kode Pertanyaan</label>
-                <input 
-                  type="text" 
-                  className={inputClass} 
-                  placeholder="Contoh: G01" 
-                  required 
+                <input
+                  type="text"
+                  className={inputClass}
+                  placeholder="Contoh: G01"
+                  required
                   value={formData.kode_pertanyaan}
                   onChange={set('kode_pertanyaan')}
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-slate-700">Kategori Pertanyaan</label>
-                <input 
-                  type="text" 
-                  className={inputClass} 
-                  placeholder="Contoh: Fisik / Psikologis / Emosi" 
-                  required 
+                <select
+                  className={inputClass}
+                  required
                   value={formData.kategori_pertanyaan}
-                  onChange={set('kategori_pertanyaan')}
-                />
+                  onChange={(e) => setFormData(f => ({ ...f, kategori_pertanyaan: e.target.value }))}
+                >
+                  <option value="" disabled>Pilih Kategori Tes</option>
+                  {typeTesList.map(t => (
+                    <option key={t.category_penyakit_uid} value={t.nama_category}>
+                      {t.nama_category}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div className="space-y-2 md:col-span-2">
                 <label className="text-sm font-semibold text-slate-700">Isi Pertanyaan (Gejala Khusus)</label>
-                <textarea 
-                  className={`${inputClass} min-h-[100px] resize-y`} 
-                  placeholder="Tuliskan pertanyaan kuisioner gejala di sini..." 
-                  required 
+                <textarea
+                  className={`${inputClass} min-h-[100px] resize-y`}
+                  placeholder="Tuliskan pertanyaan kuisioner gejala di sini..."
+                  required
                   value={formData.pertanyaan}
                   onChange={set('pertanyaan')}
                 />
@@ -113,12 +139,12 @@ export default function CreatePertanyaanPage() {
 
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-slate-700">Bobot (Desimal)</label>
-                <input 
-                  type="number" 
-                  step="0.01" 
-                  className={inputClass} 
-                  placeholder="Contoh: 0.8" 
-                  required 
+                <input
+                  type="number"
+                  step="0.01"
+                  className={inputClass}
+                  placeholder="Contoh: 0.8"
+                  required
                   value={formData.bobot}
                   onChange={set('bobot')}
                 />

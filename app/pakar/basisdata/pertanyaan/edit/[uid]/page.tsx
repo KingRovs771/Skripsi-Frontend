@@ -6,6 +6,11 @@ import Link from 'next/link';
 import { fetchApi } from '@/lib/api';
 import { toast } from 'sonner';
 
+interface TypeTes {
+  category_penyakit_uid: string;
+  nama_category: string;
+}
+
 export default function EditPertanyaanPage() {
   const router = useRouter();
   const params = useParams();
@@ -13,6 +18,20 @@ export default function EditPertanyaanPage() {
 
   const [loadingPage, setLoadingPage] = useState(true);
   const [loadingSubmit, setLoadingSubmit] = useState(false);
+  const [typeTesList, setTypeTesList] = useState<TypeTes[]>([]);
+
+  useEffect(() => {
+    const fetchTypeTes = async () => {
+      try {
+        const res = await fetchApi('/api/tesType/getAllTypeTes');
+        const json = await res.json().catch(() => ({}));
+        if (res.ok) {
+          setTypeTesList(json.Data || json.data || []);
+        }
+      } catch (e) {}
+    };
+    fetchTypeTes();
+  }, []);
 
   const [formData, setFormData] = useState({
     kode_pertanyaan: '',
@@ -136,13 +155,19 @@ export default function EditPertanyaanPage() {
               
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-slate-700">Kategori Pertanyaan</label>
-                <input 
-                  type="text" 
+                <select 
                   className={inputClass} 
                   required 
                   value={formData.kategori_pertanyaan}
-                  onChange={set('kategori_pertanyaan')}
-                />
+                  onChange={(e) => setFormData(f => ({ ...f, kategori_pertanyaan: e.target.value }))}
+                >
+                  <option value="" disabled>Pilih Kategori Tes</option>
+                  {typeTesList.map(t => (
+                    <option key={t.category_penyakit_uid} value={t.nama_category}>
+                      {t.nama_category}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div className="space-y-2 md:col-span-2">

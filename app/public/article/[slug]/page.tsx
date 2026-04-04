@@ -132,7 +132,7 @@ export default async function ArticleDetailPage({
                     [&_span]:break-words
                   "
                   style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}
-                  dangerouslySetInnerHTML={{ __html: article.isi_article || '' }}
+                  dangerouslySetInnerHTML={{ __html: (article.isi_article || '').replace(/&nbsp;/g, ' ') }}
                 />
 
                 {/* Footer artikel */}

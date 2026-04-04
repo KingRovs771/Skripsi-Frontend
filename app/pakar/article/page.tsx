@@ -158,11 +158,11 @@ export default function PakarArticlePage() {
                       </TableCell>
 
                       <TableCell>
-                        <span className={`px-2.5 py-1 text-[10px] font-black uppercase tracking-wider rounded-md ${article.status === 2 || article.status_label === 'Published'
-                            ? 'bg-emerald-100 text-emerald-700 border border-emerald-200'
-                            : 'bg-amber-100 text-amber-700 border border-amber-200'
+                        <span className={`px-2.5 py-1 text-[10px] font-black uppercase tracking-wider rounded-md ${article.status === 0 || article.status_label === 'Published'
+                          ? 'bg-emerald-100 text-emerald-700 border border-emerald-200'
+                          : 'bg-amber-100 text-amber-700 border border-amber-200'
                           }`}>
-                          {article.status_label || (article.status === 2 ? 'Published' : 'Draft')}
+                          {article.status === 1 ? 'Draft' : 'Published'}
                         </span>
                       </TableCell>
 

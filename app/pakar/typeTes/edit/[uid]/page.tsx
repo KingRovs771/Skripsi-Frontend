@@ -15,8 +15,9 @@ export default function EditKategoriPage() {
   const [loadingSubmit, setLoadingSubmit] = useState(false);
 
   const [formData, setFormData] = useState({
-    name_category: '',
-    description: '',
+    kode_category: '',
+    nama_category: '',
+    deskripsi: '',
   });
 
   // ── PREFILL DATA DARI API ──
@@ -24,14 +25,15 @@ export default function EditKategoriPage() {
     if (!categoryUid) return;
     const loadCategory = async () => {
       try {
-        const res = await fetchApi(`/api/category/getCategoryByUID/${categoryUid}`);
+        const res = await fetchApi(`/api/tesType/getTypeTesByUID/${categoryUid}`);
         const json = await res.json().catch(() => ({}));
         
         if (res.ok) {
           const d = json.Data || json.data || json;
           setFormData({
-            name_category: d.name_category ?? '',
-            description: d.description ?? '',
+            kode_category: d.kode_category ?? '',
+            nama_category: d.nama_category ?? '',
+            deskripsi: d.Deskripsi ?? d.deskripsi ?? '',
           });
         } else {
           toast.error(json.Message || json.error || 'Gagal memuat kategori', { id: 'fetch-category' });
@@ -53,14 +55,14 @@ export default function EditKategoriPage() {
     setLoadingSubmit(true);
 
     try {
-      // Pada backend Golang UpdateCategory, struct input menggunakan nama json "deskripsi" dan "name_category"
+      // Pada backend Golang UpdateCategory, struct input menggunakan nama json "deskripsi", "nama_category", "kode_category"
       const payload = {
-        name_category: formData.name_category,
-        deskripsi: formData.description,     // Menyesuaikan typo binding di Backend
-        description: formData.description,   // Menjaga kompabiltas jika backend diperbaiki
+        kode_category: formData.kode_category,
+        nama_category: formData.nama_category,
+        deskripsi: formData.deskripsi,
       };
 
-      const res = await fetchApi(`/api/category/updateCategory/${categoryUid}`, {
+      const res = await fetchApi(`/api/tesType/updateTypeTes/${categoryUid}`, {
         method: 'PUT',
         body: JSON.stringify(payload),
       });
@@ -110,13 +112,24 @@ export default function EditKategoriPage() {
 
         <form onSubmit={handleSubmit} className="p-8 space-y-6">
           <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-700">Kode Kategori</label>
+            <input 
+              className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-slate-900/20 focus:border-slate-900 outline-none text-base font-semibold transition-colors" 
+              placeholder="Contoh: TYTES-01" 
+              required 
+              value={formData.kode_category}
+              onChange={set('kode_category')}
+            />
+          </div>
+
+          <div className="space-y-2">
             <label className="text-sm font-medium text-slate-700">Nama Kategori</label>
             <input 
               className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-slate-900/20 focus:border-slate-900 outline-none text-base font-semibold transition-colors" 
-              placeholder="Contoh: Kecemasan, Depresi..." 
+              placeholder="Contoh: PHQ9, Kecemasan..." 
               required 
-              value={formData.name_category}
-              onChange={set('name_category')}
+              value={formData.nama_category}
+              onChange={set('nama_category')}
             />
           </div>
 
@@ -125,8 +138,8 @@ export default function EditKategoriPage() {
             <textarea
               className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-slate-900/20 focus:border-slate-900 outline-none min-h-[140px] resize-y text-sm text-slate-600 leading-relaxed transition-colors"
               placeholder="Jelaskan tujuan atau pengertian kategori tes ini..."
-              value={formData.description}
-              onChange={set('description')}
+              value={formData.deskripsi}
+              onChange={set('deskripsi')}
             />
           </div>
 

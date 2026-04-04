@@ -11,8 +11,9 @@ export default function CreateKategoriPage() {
   const [loading, setLoading] = useState(false);
 
   const [formData, setFormData] = useState({
-    name_category: '',
-    description: '',
+    kode_category: '',
+    nama_category: '',
+    deskripsi: '',
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -21,11 +22,12 @@ export default function CreateKategoriPage() {
 
     try {
       const payload = {
-        name_category: formData.name_category,
-        description: formData.description,
+        kode_category: formData.kode_category,
+        nama_category: formData.nama_category,
+        deskripsi: formData.deskripsi,
       };
 
-      const res = await fetchApi('/api/category/createCategory', {
+      const res = await fetchApi('/api/tesType/createTypeTes', {
         method: 'POST',
         body: JSON.stringify(payload),
       });
@@ -45,7 +47,7 @@ export default function CreateKategoriPage() {
     }
   };
 
-  const set = (field: keyof typeof formData) => 
+  const set = (field: keyof typeof formData) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
       setFormData((f) => ({ ...f, [field]: e.target.value }));
 
@@ -58,18 +60,29 @@ export default function CreateKategoriPage() {
       <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
         <div className="p-8 border-b border-slate-50">
           <h2 className="text-xl font-bold text-slate-900">Input Kategori Tes Baru</h2>
-          <p className="text-slate-500 text-sm mt-1">Tambahkan atau sesuaikan deskripsi kategori agar lebih dipahami pengguna.</p>
+          <p className="text-slate-500 text-sm mt-1">Tambahkan kode, nama, dan deskripsi kategori agar lebih dipahami pengguna.</p>
         </div>
 
         <form onSubmit={handleSubmit} className="p-8 space-y-6">
           <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-700">Kode Kategori</label>
+            <input
+              className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-slate-900/20 focus:border-slate-900 outline-none text-base font-semibold transition-colors"
+              placeholder="Contoh: TYTES-01"
+              required
+              value={formData.kode_category}
+              onChange={set('kode_category')}
+            />
+          </div>
+
+          <div className="space-y-2">
             <label className="text-sm font-medium text-slate-700">Nama Kategori</label>
-            <input 
-              className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-slate-900/20 focus:border-slate-900 outline-none text-base font-semibold transition-colors" 
-              placeholder="Contoh: Kecemasan, Depresi..." 
-              required 
-              value={formData.name_category}
-              onChange={set('name_category')}
+            <input
+              className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-slate-900/20 focus:border-slate-900 outline-none text-base font-semibold transition-colors"
+              placeholder="Contoh: PHQ9, Kecemasan..."
+              required
+              value={formData.nama_category}
+              onChange={set('nama_category')}
             />
           </div>
 
@@ -78,8 +91,8 @@ export default function CreateKategoriPage() {
             <textarea
               className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-slate-900/20 focus:border-slate-900 outline-none min-h-[140px] resize-y text-sm text-slate-600 leading-relaxed transition-colors"
               placeholder="Jelaskan tujuan atau pengertian kategori tes ini..."
-              value={formData.description}
-              onChange={set('description')}
+              value={formData.deskripsi}
+              onChange={set('deskripsi')}
             />
           </div>
 
@@ -88,7 +101,7 @@ export default function CreateKategoriPage() {
               Batal
             </Link>
             <button type="submit" disabled={loading} className="px-8 py-2.5 bg-slate-900 text-white text-sm font-medium rounded-lg hover:bg-slate-800 shadow-sm flex items-center gap-2 transition-all disabled:bg-slate-300">
-              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} 
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
               Simpan
             </button>
           </div>

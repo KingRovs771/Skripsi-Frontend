@@ -29,7 +29,7 @@ export default function CreatePenyakitPage() {
         saran_penanganan: formData.saran_penanganan,
       };
 
-      const res = await fetchApi('/api/penyakit/savePenyakit', {
+      const res = await fetchApi('/api/penyakit/createPenyakit', {
         method: 'POST',
         body: JSON.stringify(payload),
       });
@@ -49,7 +49,7 @@ export default function CreatePenyakitPage() {
     }
   };
 
-  const set = (field: keyof typeof formData) => 
+  const set = (field: keyof typeof formData) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
       setFormData((f) => ({ ...f, [field]: e.target.value }));
 
@@ -68,32 +68,32 @@ export default function CreatePenyakitPage() {
 
       <form onSubmit={handleSubmit} className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
         <div className="p-8 space-y-8">
-          
+
           <section className="space-y-6">
             <h2 className="text-base font-semibold text-slate-900 flex items-center gap-2 pb-3 border-b border-slate-100">
               <FileText className="w-5 h-5 text-emerald-600" /> Detail Penyakit
             </h2>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-slate-700">Kode Penyakit</label>
-                <input 
-                  type="text" 
-                  className={inputClass} 
-                  placeholder="Contoh: P01" 
-                  required 
+                <input
+                  type="text"
+                  className={inputClass}
+                  placeholder="Contoh: P01"
+                  required
                   value={formData.kode_penyakit}
                   onChange={set('kode_penyakit')}
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-slate-700">Nama Penyakit / Gangguan</label>
-                <input 
-                  type="text" 
-                  className={inputClass} 
-                  placeholder="Contoh: Depresi Sedang" 
-                  required 
+                <input
+                  type="text"
+                  className={inputClass}
+                  placeholder="Contoh: Depresi Sedang"
+                  required
                   value={formData.nama_penyakit}
                   onChange={set('nama_penyakit')}
                 />
@@ -101,10 +101,10 @@ export default function CreatePenyakitPage() {
 
               <div className="space-y-2 md:col-span-2">
                 <label className="text-sm font-semibold text-slate-700">Deskripsi Singkat</label>
-                <textarea 
-                  className={`${inputClass} min-h-[120px] resize-y`} 
-                  placeholder="Jelaskan mengenai penyakit ini..." 
-                  required 
+                <textarea
+                  className={`${inputClass} min-h-[120px] resize-y`}
+                  placeholder="Jelaskan mengenai penyakit ini..."
+                  required
                   value={formData.description}
                   onChange={set('description')}
                 />
@@ -112,10 +112,10 @@ export default function CreatePenyakitPage() {
 
               <div className="space-y-2 md:col-span-2">
                 <label className="text-sm font-semibold text-slate-700">Saran Penanganan</label>
-                <textarea 
-                  className={`${inputClass} min-h-[120px] resize-y`} 
-                  placeholder="Saran atau solusi yang diberikan sistem untuk penyakit ini..." 
-                  required 
+                <textarea
+                  className={`${inputClass} min-h-[120px] resize-y`}
+                  placeholder="Saran atau solusi yang diberikan sistem untuk penyakit ini..."
+                  required
                   value={formData.saran_penanganan}
                   onChange={set('saran_penanganan')}
                 />

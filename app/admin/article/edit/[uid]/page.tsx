@@ -72,7 +72,7 @@ export default function EditArticlePage() {
         const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
         // Ambil detail artikel menggunakan endpoint detail agar isi_article dan kategori ada
-        const artRes = await fetch(`${baseUrl}/api/home/articles/${uid}`);
+        const artRes = await fetch(`${baseUrl}/api/article/admin/getArtikelByUID/${uid}`);
         if (artRes.ok) {
           const artJson = await artRes.json();
           const currentArticle = artJson.data || artJson.Data;

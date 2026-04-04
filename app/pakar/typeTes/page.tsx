@@ -6,15 +6,16 @@ import { fetchApi } from '@/lib/api';
 import Link from 'next/link';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
-interface Category {
-  category_uid: string;
-  name_category: string;
-  description: string;
+interface TypeTes {
+  category_penyakit_uid: string;
+  kode_category: string;
+  nama_category: string;
+  Deskripsi: string;
 }
 
 export default function KategoriTesPage() {
   const [loadingInitial, setLoadingInitial] = useState(true);
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [categories, setCategories] = useState<TypeTes[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
 
   // Delete State
@@ -25,7 +26,7 @@ export default function KategoriTesPage() {
   const fetchCategories = async () => {
     setLoadingInitial(true);
     try {
-      const res = await fetchApi('/api/category/getAllCategories');
+      const res = await fetchApi('/api/tesType/getAllTypeTes');
       const json = await res.json().catch(() => ({}));
       if (res.ok || json.data) {
         setCategories(json.Data || json.data || []);
@@ -44,7 +45,7 @@ export default function KategoriTesPage() {
   }, []);
 
   const filteredCategories = categories.filter((c) =>
-    (c.name_category || '').toLowerCase().includes(searchQuery.toLowerCase())
+    (c.nama_category || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   // ── TRIGGER DELETE ──
@@ -56,14 +57,14 @@ export default function KategoriTesPage() {
   const handleDelete = async () => {
     if (!selectedUid) return;
     try {
-      const res = await fetchApi(`/api/category/deleteCategory/${selectedUid}`, {
+      const res = await fetchApi(`/api/tesType/deleteTypeTes/${selectedUid}`, {
         method: 'DELETE',
       });
       const json = await res.json().catch(() => ({}));
-      
+
       if (res.ok || json.Status === 'Success') {
         toast.success('Kategori telah dihapus');
-        setCategories((prev) => prev.filter((c) => c.category_uid !== selectedUid));
+        setCategories((prev) => prev.filter((c) => c.category_penyakit_uid !== selectedUid));
       } else {
         toast.error(json.Message || json.error || 'Gagal menghapus kategori');
       }
@@ -76,7 +77,7 @@ export default function KategoriTesPage() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8 pb-20">
+    <div className="max-w-6xl mx-auto space-y-8 pb-20">
       {/* HEADER */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div className="space-y-1">
@@ -93,43 +94,43 @@ export default function KategoriTesPage() {
       {/* SEARCH */}
       <div className="relative max-w-md">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-        <input 
-          placeholder="Cari berdasarkan nama kategori..." 
+        <input
+          placeholder="Cari berdasarkan nama kategori..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-slate-900/20 focus:border-slate-900 outline-none text-sm shadow-sm" 
+          className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-slate-900/20 focus:border-slate-900 outline-none text-sm shadow-sm"
         />
       </div>
 
       {/* GRID LIST */}
       {loadingInitial ? (
-          <div className="py-20 flex flex-col items-center justify-center text-slate-400">
-            <Loader2 className="w-8 h-8 animate-spin mb-3" />
-            <p className="text-sm font-medium">Memuat kategori dar server...</p>
-          </div>
+        <div className="py-20 flex flex-col items-center justify-center text-slate-400">
+          <Loader2 className="w-8 h-8 animate-spin mb-3" />
+          <p className="text-sm font-medium">Memuat kategori dar server...</p>
+        </div>
       ) : filteredCategories.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredCategories.map((cat) => (
-            <div key={cat.category_uid} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm group hover:border-slate-400 hover:shadow-md transition-all">
+            <div key={cat.category_penyakit_uid} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm group hover:border-slate-400 hover:shadow-md transition-all">
               <div className="flex justify-between items-start mb-4">
-                <div className="p-3 bg-slate-50 rounded-xl text-slate-400 group-hover:text-slate-900 group-hover:bg-slate-100 transition-all">
-                  <LayoutGrid className="w-6 h-6" />
+                <div className="p-3 bg-slate-50 rounded-xl text-slate-400 group-hover:text-slate-900 group-hover:bg-slate-100 transition-all flex flex-col justify-center items-center">
+                  <span className="text-xs font-black uppercase text-blue-600">{cat.kode_category}</span>
                 </div>
                 <div className="flex gap-1 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Link href={`/pakar/typeTes/edit/${cat.category_uid}`}>
+                  <Link href={`/pakar/typeTes/edit/${cat.category_penyakit_uid}`}>
                     <button className="p-2 text-slate-400 hover:text-blue-600 background-none rounded-lg hover:bg-slate-50">
                       <Pencil className="w-4 h-4" />
                     </button>
                   </Link>
-                  <button onClick={() => confirmDelete(cat.category_uid)} className="p-2 text-slate-400 hover:text-red-600 background-none rounded-lg hover:bg-red-50">
+                  <button onClick={() => confirmDelete(cat.category_penyakit_uid)} className="p-2 text-slate-400 hover:text-red-600 background-none rounded-lg hover:bg-red-50">
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
               </div>
               <div className="space-y-1">
-                <h3 className="font-bold text-slate-900">{cat.name_category}</h3>
+                <h3 className="font-bold text-slate-900">{cat.nama_category}</h3>
                 <p className="text-xs text-slate-500 leading-relaxed mt-2 line-clamp-3">
-                  {cat.description || <span className="italic text-slate-300">Tidak ada deskripsi</span>}
+                  {cat.Deskripsi || <span className="italic text-slate-300">Tidak ada deskripsi</span>}
                 </p>
               </div>
             </div>

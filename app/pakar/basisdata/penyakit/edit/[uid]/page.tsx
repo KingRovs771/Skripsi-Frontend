@@ -61,8 +61,7 @@ export default function EditPenyakitPage() {
       const payload = {
         kode_penyakit: formData.kode_penyakit,
         nama_penyakit: formData.nama_penyakit,
-        // Backend Golang memiliki typo struktur binding pada Update: "descripcion" 
-        descripcion: formData.description,
+        description: formData.description,
         saran_penanganan: formData.saran_penanganan,
       };
 

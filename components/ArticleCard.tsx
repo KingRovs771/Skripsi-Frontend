@@ -10,7 +10,6 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import Image from "next/image";
 
 // Definisikan tipe untuk prop 'article'
 type Article = {
@@ -25,7 +24,7 @@ type Article = {
 // Helpert utk hapus tags HTML dari Content Summary
 const stripHtml = (html: string) => {
   if (!html) return '';
-  return html.replace(/<[^>]*>?/gm, '');
+  return html.replace(/<[^>]*>?/gm, '').replace(/&nbsp;/g, ' ');
 };
 
 export default function ArticleCard({ article }: { article: Article }) {
