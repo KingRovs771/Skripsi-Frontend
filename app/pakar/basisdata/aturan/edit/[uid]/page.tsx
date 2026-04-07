@@ -6,6 +6,18 @@ import Link from 'next/link';
 import { fetchApi } from '@/lib/api';
 import { toast } from 'sonner';
 
+interface Penyakit {
+  penyakit_uid: string;
+  kode_penyakit: string;
+  nama_penyakit: string;
+}
+
+interface Pertanyaan {
+  pertanyaan_uid: string;
+  kode_pertanyaan: string;
+  pertanyaan: string;
+}
+
 export default function EditAturanPage() {
   const router = useRouter();
   const params = useParams();
@@ -13,13 +25,37 @@ export default function EditAturanPage() {
 
   const [loadingPage, setLoadingPage] = useState(true);
   const [loadingSubmit, setLoadingSubmit] = useState(false);
+  const [penyakitList, setPenyakitList] = useState<Penyakit[]>([]);
+  const [pertanyaanList, setPertanyaanList] = useState<Pertanyaan[]>([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [resPenyakit, resPertanyaan] = await Promise.all([
+          fetchApi('/api/penyakit/getAllPenyakits'),
+          fetchApi('/api/pertanyaan/getAllPertanyaans')
+        ]);
+
+        const jsonPenyakit = await resPenyakit.json().catch(() => ({}));
+        if (resPenyakit.ok) {
+          setPenyakitList(jsonPenyakit.Data || jsonPenyakit.data || []);
+        }
+
+        const jsonPertanyaan = await resPertanyaan.json().catch(() => ({}));
+        if (resPertanyaan.ok) {
+          setPertanyaanList(jsonPertanyaan.Data || jsonPertanyaan.data || []);
+        }
+      } catch (e) { }
+    };
+    fetchData();
+  }, []);
 
   // Default state form
   const [formData, setFormData] = useState({
     kode_penyakit: '',
     kode_pertanyaan: '',
     min_value: 0,
-    is_mandatory: 1, // 1 = Wajib, 0 = Opsional
+    is_mandatory: 1,
   });
 
   // ── PREFILL DATA DARI API ──
@@ -29,7 +65,7 @@ export default function EditAturanPage() {
       try {
         const res = await fetchApi(`/api/aturan/getAturan/${aturanUid}`);
         const json = await res.json().catch(() => ({}));
-        
+
         if (res.ok) {
           const d = json.Data || json.data || json;
           setFormData({
@@ -85,7 +121,7 @@ export default function EditAturanPage() {
     }
   };
 
-  const set = (field: keyof typeof formData) => 
+  const set = (field: keyof typeof formData) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
       setFormData((f) => ({ ...f, [field]: e.target.value }));
 
@@ -115,42 +151,54 @@ export default function EditAturanPage() {
 
       <form onSubmit={handleSubmit} className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
         <div className="p-8 space-y-8">
-          
+
           <section className="space-y-6">
             <h2 className="text-base font-semibold text-slate-900 flex items-center gap-2 pb-3 border-b border-slate-100">
               <Link2 className="w-5 h-5 text-blue-600" /> Relasi Pengetahuan
             </h2>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-slate-700">Kode Penyakit</label>
-                <input 
-                  type="text" 
-                  className={inputClass} 
-                  required 
+                <select
+                  className={inputClass}
+                  required
                   value={formData.kode_penyakit}
                   onChange={set('kode_penyakit')}
-                />
+                >
+                  <option value="" disabled>Pilih Penyakit</option>
+                  {penyakitList.map(p => (
+                    <option key={p.penyakit_uid} value={p.kode_penyakit}>
+                      {p.kode_penyakit} - {p.nama_penyakit}
+                    </option>
+                  ))}
+                </select>
               </div>
-              
+
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-slate-700">Kode Pertanyaan</label>
-                <input 
-                  type="text" 
-                  className={inputClass} 
-                  required 
+                <select
+                  className={inputClass}
+                  required
                   value={formData.kode_pertanyaan}
                   onChange={set('kode_pertanyaan')}
-                />
+                >
+                  <option value="" disabled>Pilih Pertanyaan</option>
+                  {pertanyaanList.map(p => (
+                    <option key={p.pertanyaan_uid} value={p.kode_pertanyaan}>
+                      {p.kode_pertanyaan} - {p.pertanyaan.substring(0, 50)}{p.pertanyaan.length > 50 ? '...' : ''}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-slate-700">Minimal Skor</label>
-                <input 
-                  type="number" 
-                  className={inputClass} 
+                <input
+                  type="number"
+                  className={inputClass}
                   min="0"
-                  required 
+                  required
                   value={formData.min_value}
                   onChange={set('min_value')}
                 />
@@ -158,9 +206,9 @@ export default function EditAturanPage() {
 
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-slate-700">Mandatory (Wajib Dijawab)</label>
-                <select 
-                  className={inputClass} 
-                  value={formData.is_mandatory} 
+                <select
+                  className={inputClass}
+                  value={formData.is_mandatory}
                   onChange={set('is_mandatory')}
                   required
                 >
