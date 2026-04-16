@@ -28,7 +28,7 @@ export default function EditPertanyaanPage() {
         if (res.ok) {
           setTypeTesList(json.Data || json.data || []);
         }
-      } catch (e) {}
+      } catch (e) { }
     };
     fetchTypeTes();
   }, []);
@@ -47,7 +47,7 @@ export default function EditPertanyaanPage() {
       try {
         const res = await fetchApi(`/api/pertanyaan/getPertanyaanByUID/${pertanyaanUid}`);
         const json = await res.json().catch(() => ({}));
-        
+
         if (res.ok) {
           const d = json.Data || json.data || json;
           setFormData({
@@ -105,7 +105,7 @@ export default function EditPertanyaanPage() {
     }
   };
 
-  const set = (field: keyof typeof formData) => 
+  const set = (field: keyof typeof formData) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
       setFormData((f) => ({ ...f, [field]: e.target.value }));
 
@@ -135,29 +135,29 @@ export default function EditPertanyaanPage() {
 
       <form onSubmit={handleSubmit} className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
         <div className="p-8 space-y-8">
-          
+
           <section className="space-y-6">
             <h2 className="text-base font-semibold text-slate-900 flex items-center gap-2 pb-3 border-b border-slate-100">
               <MessageSquare className="w-5 h-5 text-blue-600" /> Detail Pertanyaan
             </h2>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-slate-700">Kode Pertanyaan</label>
-                <input 
-                  type="text" 
-                  className={inputClass} 
-                  required 
+                <input
+                  type="text"
+                  className={inputClass}
+                  required
                   value={formData.kode_pertanyaan}
                   onChange={set('kode_pertanyaan')}
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-slate-700">Kategori Pertanyaan</label>
-                <select 
-                  className={inputClass} 
-                  required 
+                <select
+                  className={inputClass}
+                  required
                   value={formData.kategori_pertanyaan}
                   onChange={(e) => setFormData(f => ({ ...f, kategori_pertanyaan: e.target.value }))}
                 >
@@ -172,9 +172,9 @@ export default function EditPertanyaanPage() {
 
               <div className="space-y-2 md:col-span-2">
                 <label className="text-sm font-semibold text-slate-700">Isi Pertanyaan (Gejala Khusus)</label>
-                <textarea 
-                  className={`${inputClass} min-h-[100px] resize-y`} 
-                  required 
+                <textarea
+                  className={`${inputClass} min-h-[100px] resize-y`}
+                  required
                   value={formData.pertanyaan}
                   onChange={set('pertanyaan')}
                 />
@@ -182,11 +182,11 @@ export default function EditPertanyaanPage() {
 
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-slate-700">Bobot (Rentang 0.01 - 1.00)</label>
-                <input 
-                  type="number" 
-                  step="0.01" 
-                  className={inputClass} 
-                  required 
+                <input
+                  type="number"
+                  step="0.01"
+                  className={inputClass}
+                  required
                   value={formData.bobot}
                   onChange={set('bobot')}
                 />

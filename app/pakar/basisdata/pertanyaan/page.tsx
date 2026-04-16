@@ -122,7 +122,7 @@ export default function PakarPertanyaanPage() {
                 <TableHead className="w-[60px] py-4 font-bold text-slate-700 text-center">No.</TableHead>
                 <TableHead className="w-[100px] font-bold text-slate-700">Kode</TableHead>
                 <TableHead className="w-[140px] font-bold text-slate-700">Kategori</TableHead>
-                <TableHead className="font-bold text-slate-700">Isi Pertanyaan</TableHead>
+                <TableHead className="max-w-[300px] font-bold text-slate-700">Isi Pertanyaan</TableHead>
                 <TableHead className="w-[80px] font-bold text-slate-700 text-center">Bobot</TableHead>
                 <TableHead className="w-[120px] text-right font-bold text-slate-700 pr-6">Aksi</TableHead>
               </TableRow>
@@ -145,7 +145,11 @@ export default function PakarPertanyaanPage() {
                         {item.kategori_pertanyaan}
                       </span>
                     </TableCell>
-                    <TableCell className="text-slate-700">{item.pertanyaan}</TableCell>
+                    <TableCell className="max-w-[300px]">
+                      <p className="text-slate-700 text-sm line-clamp-2 leading-relaxed" title={item.pertanyaan}>
+                        {item.pertanyaan}
+                      </p>
+                    </TableCell>
                     <TableCell className="text-center font-bold text-slate-900">{item.bobot}</TableCell>
                     <TableCell className="text-right pr-6">
                       <div className="flex justify-end gap-1">

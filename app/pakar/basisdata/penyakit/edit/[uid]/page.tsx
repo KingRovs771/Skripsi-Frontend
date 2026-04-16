@@ -27,9 +27,9 @@ export default function EditPenyakitPage() {
     if (!penyakitUid) return;
     const fetchPenyakit = async () => {
       try {
-        const res = await fetchApi(`/api/penyakit/getPenyakitByUID/${penyakitUid}`);
+        const res = await fetchApi(`/api/penyakit/getPenyakitsByUID/${penyakitUid}`);
         const json = await res.json().catch(() => ({}));
-        
+
         if (res.ok) {
           const d = json.Data || json.data || json;
           setFormData({
@@ -85,7 +85,7 @@ export default function EditPenyakitPage() {
     }
   };
 
-  const set = (field: keyof typeof formData) => 
+  const set = (field: keyof typeof formData) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
       setFormData((f) => ({ ...f, [field]: e.target.value }));
 
@@ -115,30 +115,30 @@ export default function EditPenyakitPage() {
 
       <form onSubmit={handleSubmit} className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
         <div className="p-8 space-y-8">
-          
+
           <section className="space-y-6">
             <h2 className="text-base font-semibold text-slate-900 flex items-center gap-2 pb-3 border-b border-slate-100">
               <FileText className="w-5 h-5 text-emerald-600" /> Detail Penyakit
             </h2>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-slate-700">Kode Penyakit</label>
-                <input 
-                  type="text" 
-                  className={inputClass} 
-                  required 
+                <input
+                  type="text"
+                  className={inputClass}
+                  required
                   value={formData.kode_penyakit}
                   onChange={set('kode_penyakit')}
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-slate-700">Nama Penyakit</label>
-                <input 
-                  type="text" 
-                  className={inputClass} 
-                  required 
+                <input
+                  type="text"
+                  className={inputClass}
+                  required
                   value={formData.nama_penyakit}
                   onChange={set('nama_penyakit')}
                 />
@@ -146,9 +146,9 @@ export default function EditPenyakitPage() {
 
               <div className="space-y-2 md:col-span-2">
                 <label className="text-sm font-semibold text-slate-700">Deskripsi Singkat</label>
-                <textarea 
-                  className={`${inputClass} min-h-[120px] resize-y`} 
-                  required 
+                <textarea
+                  className={`${inputClass} min-h-[120px] resize-y`}
+                  required
                   value={formData.description}
                   onChange={set('description')}
                 />
@@ -156,9 +156,9 @@ export default function EditPenyakitPage() {
 
               <div className="space-y-2 md:col-span-2">
                 <label className="text-sm font-semibold text-slate-700">Saran Penanganan</label>
-                <textarea 
-                  className={`${inputClass} min-h-[120px] resize-y`} 
-                  required 
+                <textarea
+                  className={`${inputClass} min-h-[120px] resize-y`}
+                  required
                   value={formData.saran_penanganan}
                   onChange={set('saran_penanganan')}
                 />
