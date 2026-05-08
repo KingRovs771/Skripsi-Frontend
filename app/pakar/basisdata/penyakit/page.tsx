@@ -15,6 +15,7 @@ interface Penyakit {
   penyakit_uid: string;
   kode_penyakit: string;
   nama_penyakit: string;
+  kode_turunan: string;
   description: string;
   saran_penanganan: string;
 }
@@ -118,9 +119,10 @@ export default function PakarPenyakitPage() {
           <Table>
             <TableHeader className="bg-slate-50/50">
               <TableRow>
-                <TableHead className="w-[80px] py-4 font-bold text-slate-700">No.</TableHead>
-                <TableHead className="font-bold text-slate-700">Kode</TableHead>
+                <TableHead className="w-[60px] py-4 font-bold text-slate-700">No.</TableHead>
+                <TableHead className="w-[90px] font-bold text-slate-700">Kode</TableHead>
                 <TableHead className="font-bold text-slate-700">Nama Penyakit</TableHead>
+                <TableHead className="w-[110px] font-bold text-slate-700">Kode Turunan</TableHead>
                 <TableHead className="font-bold text-slate-700">Deskripsi Singkat</TableHead>
                 <TableHead className="text-right font-bold text-slate-700 pr-6">Aksi</TableHead>
               </TableRow>
@@ -128,7 +130,7 @@ export default function PakarPenyakitPage() {
             <TableBody>
               {loadingInitial ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="h-40 text-center text-slate-400">
+                  <TableCell colSpan={6} className="h-40 text-center text-slate-400">
                     <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3" />
                     Memuat data penyakit...
                   </TableCell>
@@ -137,9 +139,18 @@ export default function PakarPenyakitPage() {
                 filtered.map((penyakit, index) => (
                   <TableRow key={penyakit.penyakit_uid || index} className="hover:bg-slate-50/50 transition-colors">
                     <TableCell className="py-4 text-slate-500 font-medium">{index + 1}</TableCell>
-                    <TableCell className="font-bold text-emerald-600">{penyakit.kode_penyakit}</TableCell>
+                    <TableCell className="font-bold text-emerald-600 font-mono">{penyakit.kode_penyakit}</TableCell>
                     <TableCell className="font-bold text-slate-900">{penyakit.nama_penyakit}</TableCell>
-                    <TableCell className="text-slate-500 max-w-sm truncate" title={penyakit.description}>
+                    <TableCell>
+                      {penyakit.kode_turunan ? (
+                        <span className="inline-block px-2.5 py-1 text-xs font-bold font-mono rounded-lg bg-blue-50 text-blue-700 border border-blue-100">
+                          {penyakit.kode_turunan}
+                        </span>
+                      ) : (
+                        <span className="text-slate-300 text-sm">—</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-slate-500 max-w-xs truncate" title={penyakit.description}>
                       {penyakit.description || '-'}
                     </TableCell>
                     <TableCell className="text-right pr-6">
@@ -158,7 +169,7 @@ export default function PakarPenyakitPage() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-20 text-slate-400 font-medium italic">
+                  <TableCell colSpan={6} className="text-center py-20 text-slate-400 font-medium italic">
                     Belum ada data penyakit yang tersedia.
                   </TableCell>
                 </TableRow>

@@ -16,6 +16,29 @@ export default function CreateSiswa() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
+  // ── Role UID Student (hidden, fetch saat mount) ───────────────────────────
+  const [studentRoleUid, setStudentRoleUid] = useState('');
+
+  useEffect(() => {
+    const fetchStudentRole = async () => {
+      try {
+        const res = await fetchApi('/api/role/getRole');
+        if (!res.ok) return;
+        const json = await res.json();
+        const roles: any[] = Array.isArray(json.Data) ? json.Data : [];
+        // Cari role dengan nama student / siswa / students (case-insensitive)
+        const role = roles.find((r) =>
+          ['student', 'students', 'siswa'].includes(r.role_name?.toLowerCase())
+        );
+        if (role) setStudentRoleUid(role.role_uid);
+        else console.warn('[CreateSiswa] Role "student/siswa" tidak ditemukan di database');
+      } catch {
+        console.error('[CreateSiswa] Gagal fetch role');
+      }
+    };
+    fetchStudentRole();
+  }, []);
+
   const [formData, setFormData] = useState({
     nisn: '',
     nama_lengkap: '',
@@ -23,7 +46,7 @@ export default function CreateSiswa() {
     alamat: '',
     email: '',
     password: '',
-    jenjang: '',
+    jenjang_pendidikan: '',
     kelas: '',
     npsn: '',
   });
@@ -93,19 +116,32 @@ export default function CreateSiswa() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.npsn) { toast.warning('Pilih sekolah terlebih dahulu'); return; }
+    if (!studentRoleUid) { toast.error('Data role belum siap, coba refresh halaman'); return; }
 
     setLoading(true);
     try {
       const res = await fetchApi('/api/users/createStudents', {
         method: 'POST',
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ ...formData, role_uid: studentRoleUid }),
       });
-      const json = await res.json().catch(() => ({}));
+
+      // Baca body sebagai text dulu, lalu coba parse JSON
+      const text = await res.text().catch(() => '');
+      let json: Record<string, any> = {};
+      try { json = text ? JSON.parse(text) : {}; } catch { /* body bukan JSON */ }
+
       if (res.ok) {
         toast.success('Data siswa berhasil ditambahkan!');
         router.push('/admin/users/students');
       } else {
-        toast.error(json.Message || json.message || json.error || 'Gagal menyimpan data siswa');
+        const errMsg =
+          json.Message ||
+          json.message ||
+          json.Error ||
+          json.error ||
+          text ||
+          `Gagal menyimpan data siswa (HTTP ${res.status})`;
+        toast.error(errMsg);
       }
     } catch {
       toast.error('Koneksi ke server gagal');
@@ -234,8 +270,8 @@ export default function CreateSiswa() {
                 <select
                   required
                   className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm bg-white"
-                  value={formData.jenjang}
-                  onChange={set('jenjang')}
+                  value={formData.jenjang_pendidikan}
+                  onChange={set('jenjang_pendidikan')}
                 >
                   <option value="">Pilih Jenjang</option>
                   <option value="SMP">SMP</option>
@@ -289,21 +325,29 @@ export default function CreateSiswa() {
         </div>
 
         {/* Footer Aksi */}
-        <div className="px-8 py-5 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-3">
-          <Link
-            href="/admin/users/students"
-            className="px-5 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-xl transition-all"
-          >
-            Batal
-          </Link>
-          <button
-            type="submit"
-            disabled={loading}
-            className="bg-slate-900 text-white px-6 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-slate-800 disabled:bg-slate-300 transition-all shadow-sm"
-          >
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            Simpan Data Siswa
-          </button>
+        <div className="px-8 py-5 bg-slate-50 border-t border-slate-100 flex items-center justify-between gap-3">
+          <p className="text-xs">
+            {studentRoleUid
+              ? <span className="text-green-600 font-medium">✓ Role Student siap</span>
+              : <span className="text-amber-500 font-medium flex items-center gap-1"><Loader2 className="w-3 h-3 animate-spin inline" /> Memuat role...</span>
+            }
+          </p>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/admin/users/students"
+              className="px-5 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-xl transition-all"
+            >
+              Batal
+            </Link>
+            <button
+              type="submit"
+              disabled={loading || !studentRoleUid}
+              className="bg-slate-900 text-white px-6 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-slate-800 disabled:bg-slate-300 disabled:cursor-not-allowed transition-all shadow-sm"
+            >
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              Simpan Data Siswa
+            </button>
+          </div>
         </div>
       </form>
     </div>

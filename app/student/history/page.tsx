@@ -1,7 +1,18 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { ClipboardCheck, Calendar, ArrowRight, Loader2, Trophy, Activity, AlertCircle, CheckCircle2 } from 'lucide-react';
+import {
+  ClipboardCheck,
+  Calendar,
+  Loader2,
+  Trophy,
+  Activity,
+  AlertCircle,
+  CheckCircle2,
+  EyeOff,
+  Clock,
+} from 'lucide-react';
 import Link from 'next/link';
+import { fetchApi } from '@/lib/api';
 
 interface MyTestHistory {
   id: number;
@@ -10,6 +21,28 @@ interface MyTestHistory {
   kategori: string;
   tanggal: string;
   rekomendasi: string;
+  is_visible_to_student: boolean;
+  reviewed_by_gurubk: boolean;
+}
+
+function getCategoryStyle(skor: number, kategori: string) {
+  const lowerKat = kategori.toLowerCase();
+  if (lowerKat.includes('berat') || lowerKat.includes('parah') || skor > 20) {
+    return {
+      bar: 'bg-red-500',
+      badge: 'bg-red-50 text-red-700 border-red-200',
+    };
+  }
+  if (lowerKat.includes('sedang') || lowerKat.includes('moderat') || (skor > 10 && skor <= 20)) {
+    return {
+      bar: 'bg-amber-400',
+      badge: 'bg-amber-50 text-amber-700 border-amber-200',
+    };
+  }
+  return {
+    bar: 'bg-green-400',
+    badge: 'bg-green-50 text-green-700 border-green-200',
+  };
 }
 
 export default function StudentHistoryPage() {
@@ -17,12 +50,11 @@ export default function StudentHistoryPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Simulasi fetch data history milik siswa yang sedang login
     const fetchMyHistory = async () => {
       try {
-        const response = await fetch('http://localhost:8080/siswa/my-history');
-        const data = await response.json();
-        setHistory(data.data || []);
+        const res = await fetchApi('/api/siswa/my-history', { method: 'GET' });
+        const data = await res.json().catch(() => ({}));
+        setHistory(data.Data || data.data || []);
       } catch (error) {
         console.error('Gagal memuat riwayat:', error);
       } finally {
@@ -31,6 +63,10 @@ export default function StudentHistoryPage() {
     };
     fetchMyHistory();
   }, []);
+
+  // Pisahkan: yang sudah approved (visible) vs belum/belum ditinjau
+  const visibleHistory = history.filter((h) => h.is_visible_to_student);
+  const pendingHistory = history.filter((h) => !h.is_visible_to_student);
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 pb-10">
@@ -57,55 +93,136 @@ export default function StudentHistoryPage() {
             <ClipboardCheck className="w-8 h-8" />
           </div>
           <p className="text-slate-500 font-medium">Kamu belum pernah melakukan tes diagnosis.</p>
-          <Link href="/siswa/tes">
-            <button className="bg-slate-900 text-white px-6 py-2 rounded-xl font-bold hover:bg-slate-800 transition-all">Mulai Tes Sekarang</button>
+          <Link href="/student/test">
+            <button className="bg-slate-900 text-white px-6 py-2 rounded-xl font-bold hover:bg-slate-800 transition-all">
+              Mulai Tes Sekarang
+            </button>
           </Link>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-6">
-          {history.map((item) => (
-            <div key={item.id} className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm hover:shadow-md transition-all group overflow-hidden relative">
-              {/* Status Indicator Bar */}
-              <div className={`absolute left-0 top-0 bottom-0 w-2 ${item.skor > 15 ? 'bg-amber-400' : 'bg-green-400'}`}></div>
+        <div className="space-y-8">
+          {/* Hasil yang sudah disetujui untuk ditampilkan */}
+          {visibleHistory.length > 0 && (
+            <div>
+              <h2 className="text-sm font-bold text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-green-500" />
+                Hasil yang Tersedia ({visibleHistory.length})
+              </h2>
+              <div className="grid grid-cols-1 gap-6">
+                {visibleHistory.map((item) => {
+                  const style = getCategoryStyle(item.skor, item.kategori);
+                  return (
+                    <div
+                      key={item.id}
+                      className="bg-white border border-slate-200 rounded-3xl shadow-sm hover:shadow-md transition-all group overflow-hidden relative"
+                    >
+                      {/* Status Indicator Bar */}
+                      <div className={`absolute left-0 top-0 bottom-0 w-2 ${style.bar}`} />
 
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                <div className="space-y-4 flex-1">
-                  <div className="flex items-center gap-3">
-                    <div className="p-3 bg-slate-100 rounded-2xl text-slate-600 group-hover:bg-slate-900 group-hover:text-white transition-colors">
-                      <Activity className="w-6 h-6" />
-                    </div>
-                    <div>
-                      <h3 className="font-black text-xl text-slate-900">{item.nama_tes}</h3>
-                      <p className="text-sm text-slate-400 flex items-center gap-1 font-medium">
-                        <Calendar className="w-3 h-3" /> {item.tanggal}
-                      </p>
-                    </div>
-                  </div>
+                      <div className="pl-4 p-6 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                        <div className="space-y-4 flex-1">
+                          <div className="flex items-center gap-3">
+                            <div className="p-3 bg-slate-100 rounded-2xl text-slate-600 group-hover:bg-slate-900 group-hover:text-white transition-colors">
+                              <Activity className="w-6 h-6" />
+                            </div>
+                            <div>
+                              <h3 className="font-black text-xl text-slate-900">{item.nama_tes}</h3>
+                              <p className="text-sm text-slate-400 flex items-center gap-1 font-medium">
+                                <Calendar className="w-3 h-3" />
+                                {item.tanggal
+                                  ? new Date(item.tanggal).toLocaleDateString('id-ID', {
+                                      day: '2-digit',
+                                      month: 'long',
+                                      year: 'numeric',
+                                    })
+                                  : item.tanggal}
+                              </p>
+                            </div>
+                          </div>
 
-                  {/* Bagian Rekomendasi */}
-                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                    <div className="flex items-center gap-2 mb-1">
-                      <CheckCircle2 className="w-4 h-4 text-green-500" />
-                      <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Catatan Pakar</span>
-                    </div>
-                    <p className="text-sm text-slate-700 leading-relaxed font-medium italic">"{item.rekomendasi}"</p>
-                  </div>
-                </div>
+                          {/* Bagian Rekomendasi */}
+                          {item.rekomendasi && (
+                            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                              <div className="flex items-center gap-2 mb-1">
+                                <CheckCircle2 className="w-4 h-4 text-green-500" />
+                                <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest">
+                                  Catatan Pakar
+                                </span>
+                              </div>
+                              <p className="text-sm text-slate-700 leading-relaxed font-medium italic">
+                                &ldquo;{item.rekomendasi}&rdquo;
+                              </p>
+                            </div>
+                          )}
+                        </div>
 
-                {/* Badge Skor & Kategori */}
-                <div className="flex items-center gap-6 md:border-l border-slate-100 md:pl-8">
-                  <div className="text-center">
-                    <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-1">Skor Kamu</p>
-                    <div className="text-5xl font-black text-slate-900 leading-none">{item.skor}</div>
-                  </div>
-                  <div className="min-w-[140px]">
-                    <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-2">Hasil Analisis</p>
-                    <div className={`px-4 py-2 rounded-xl text-xs font-black border text-center ${item.skor > 15 ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-green-50 text-green-700 border-green-200'}`}>{item.kategori}</div>
-                  </div>
-                </div>
+                        {/* Badge Skor & Kategori */}
+                        <div className="flex items-center gap-6 md:border-l border-slate-100 md:pl-8">
+                          <div className="text-center">
+                            <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-1">
+                              Skor Kamu
+                            </p>
+                            <div className="text-5xl font-black text-slate-900 leading-none">{item.skor}</div>
+                          </div>
+                          <div className="min-w-[140px]">
+                            <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-2">
+                              Hasil Analisis
+                            </p>
+                            <div className={`px-4 py-2 rounded-xl text-xs font-black border text-center ${style.badge}`}>
+                              {item.kategori}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
-          ))}
+          )}
+
+          {/* Hasil yang belum / tidak ditampilkan oleh Guru BK */}
+          {pendingHistory.length > 0 && (
+            <div>
+              <h2 className="text-sm font-bold text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+                <Clock className="w-4 h-4 text-slate-400" />
+                Menunggu Tinjauan Guru BK ({pendingHistory.length})
+              </h2>
+              <div className="grid grid-cols-1 gap-4">
+                {pendingHistory.map((item) => (
+                  <div
+                    key={item.id}
+                    className="bg-slate-50 border border-dashed border-slate-200 rounded-2xl p-5 flex items-center justify-between gap-4 opacity-70"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="p-2.5 bg-slate-200 rounded-xl">
+                        <EyeOff className="w-5 h-5 text-slate-400" />
+                      </div>
+                      <div>
+                        <p className="font-bold text-slate-700">{item.nama_tes}</p>
+                        <p className="text-xs text-slate-400 mt-0.5 flex items-center gap-1">
+                          <Calendar className="w-3 h-3" />
+                          {item.tanggal
+                            ? new Date(item.tanggal).toLocaleDateString('id-ID', {
+                                day: '2-digit',
+                                month: 'long',
+                                year: 'numeric',
+                              })
+                            : item.tanggal}
+                        </p>
+                      </div>
+                    </div>
+                    <span className="text-xs font-bold text-slate-400 bg-slate-200 px-3 py-1.5 rounded-lg whitespace-nowrap">
+                      {item.reviewed_by_gurubk ? 'Disembunyikan' : 'Menunggu Tinjauan'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-slate-400 mt-3 text-center">
+                Hasil ini masih dalam proses tinjauan oleh Guru BK dan belum dapat ditampilkan.
+              </p>
+            </div>
+          )}
         </div>
       )}
 
@@ -114,7 +231,9 @@ export default function StudentHistoryPage() {
         <AlertCircle className="absolute -right-6 -bottom-6 w-32 h-32 text-white/10 rotate-12" />
         <h4 className="text-lg font-bold mb-2 flex items-center gap-2">Butuh teman bercerita?</h4>
         <p className="text-slate-300 text-sm max-w-md leading-relaxed">
-          Jangan ragu untuk menghubungi Guru BK atau Pakar Psikologi melalui menu <span className="text-white font-bold underline">Tanya Jawab</span> jika kamu merasa butuh bantuan lebih lanjut.
+          Jangan ragu untuk menghubungi Guru BK atau Pakar Psikologi melalui menu{' '}
+          <span className="text-white font-bold underline">Tanya Jawab</span> jika kamu merasa butuh
+          bantuan lebih lanjut.
         </p>
       </div>
     </div>
