@@ -1,6 +1,8 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { Send, Clock, CheckCircle2, Search, Loader2, MessageCircle, UserCircle, GraduationCap, Stethoscope, ChevronLeft, ArrowRight } from 'lucide-react';
+import { Send, Loader2, GraduationCap, Stethoscope, ChevronLeft, ArrowRight } from 'lucide-react';
+import { fetchApi } from '@/lib/api';
+import { toast } from 'sonner';
 
 type Destination = 'BK' | 'PAKAR' | null;
 
@@ -18,9 +20,11 @@ export default function StudentFAQPage() {
 
   const fetchMyQuestions = async () => {
     try {
-      const response = await fetch('http://localhost:8080/siswa/my-questions');
+      const response = await fetchApi('/api/siswa/my-questions');
       const data = await response.json();
-      setQuestions(data.data || []);
+      if (response.ok) {
+        setQuestions(data.data || []);
+      }
     } catch (error) {
       console.error(error);
     } finally {
@@ -32,28 +36,32 @@ export default function StudentFAQPage() {
     e.preventDefault();
     setSubmitting(true);
     try {
-      const response = await fetch('http://localhost:8080/siswa/ask-question', {
+      const response = await fetchApi('/api/siswa/ask-question', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           pertanyaan: newQuestion,
           tujuan: destination, // Mengirim tujuan (BK atau PAKAR) ke API
         }),
       });
 
+      const json = await response.json();
+
       if (response.ok) {
         setNewQuestion('');
         setStep(1);
         setDestination(null);
         fetchMyQuestions();
-        alert(`Pertanyaanmu telah terkirim ke ${destination === 'BK' ? 'Guru BK' : 'Pakar'}!`);
+        toast.success(`Pertanyaanmu telah terkirim ke ${destination === 'BK' ? 'Guru BK' : 'Pakar'}!`);
+      } else {
+        toast.error(json.Message || 'Gagal mengirim pertanyaan');
       }
     } catch (error) {
-      alert('Gagal mengirim.');
+      toast.error('Gagal terhubung ke server');
     } finally {
       setSubmitting(false);
     }
   };
+
 
   return (
     <div className="max-w-4xl mx-auto space-y-10 pb-20">
@@ -149,18 +157,20 @@ export default function StudentFAQPage() {
         ) : (
           <div className="grid gap-4">
             {questions.map((q: any) => (
-              <div key={q.id} className="bg-white border border-slate-200 p-6 rounded-3xl flex flex-col gap-4">
+              <div key={q.faqs_uid} className="bg-white border border-slate-200 p-6 rounded-3xl flex flex-col gap-4">
                 <div className="flex justify-between items-start">
                   <div className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${q.tujuan === 'BK' ? 'bg-blue-50 text-blue-600 border-blue-100' : 'bg-purple-50 text-purple-600 border-purple-100'}`}>
                     Kepada: {q.tujuan}
                   </div>
-                  <span className="text-[10px] text-slate-400 font-bold">{q.tanggal}</span>
+                  <span className="text-[10px] text-slate-400 font-bold">
+                    {new Date(q.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                  </span>
                 </div>
-                <p className="font-bold text-slate-800">{q.pertanyaan}</p>
-                {q.jawaban && (
+                <p className="font-bold text-slate-800">{q.faq_pertanyaan}</p>
+                {q.faq_jawaban && (
                   <div className="mt-2 p-4 bg-slate-50 rounded-2xl border-l-4 border-slate-900">
                     <p className="text-[10px] font-black uppercase text-slate-400 mb-1">Jawaban:</p>
-                    <p className="text-sm text-slate-700 leading-relaxed font-medium">{q.jawaban}</p>
+                    <p className="text-sm text-slate-700 leading-relaxed font-medium">{q.faq_jawaban}</p>
                   </div>
                 )}
               </div>

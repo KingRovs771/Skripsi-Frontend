@@ -56,6 +56,12 @@ export default function LoginPage() {
         console.warn('Token JWT masih belum berhasil ditangkap dari JSON Backend!', data);
       }
 
+      // Simpan pakar_uid jika ada (beberapa modul/fitur membutuhkan ini)
+      const pakarUid = data.User?.pakar_uid || data.user?.pakar_uid || data.Data?.pakar_uid || data.data?.pakar_uid;
+      if (pakarUid) {
+        localStorage.setItem('pakar_uid', pakarUid);
+      }
+
       toast.success('Login berhasil!');
       router.push(getDashboardUrl('pakar'));
 

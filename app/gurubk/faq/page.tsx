@@ -7,8 +7,6 @@ import { Pencil, Trash2, Loader2, Scale, Search } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { fetchApi } from '@/lib/api';
-
-// Import komponen AlertDialog dari Shadcn UI
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 interface FaqResponse {
@@ -16,27 +14,23 @@ interface FaqResponse {
   nisn: string;
   nama_lengkap: string;
   faq_pertanyaan: string;
-  status: string; // 'Menunggu Balasan' atau 'Terjawab'
+  status: string;
   created_at: string;
 }
 
-export default function PakarFaqPage() {
+export default function GuruBkFaqPage() {
   const [faqs, setFaqs] = useState<FaqResponse[]>([]);
   const [loadingInitial, setLoadingInitial] = useState(true);
   const [loadingDelete, setLoadingDelete] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-
-  // State untuk kontrol modal konfirmasi
   const [openAlert, setOpenAlert] = useState(false);
   const [selectedUid, setSelectedUid] = useState<string | null>(null);
 
-  // ── FETCH FAQS ──
   const fetchFaqs = async () => {
     setLoadingInitial(true);
     try {
-      const res = await fetchApi('/api/faq/getAllFaqs');
+      const res = await fetchApi('/api/gurubk/faq/getAllFaqs');
       const json = await res.json();
-
       if (res.ok) {
         setFaqs(json.Data || []);
       } else {
@@ -49,7 +43,6 @@ export default function PakarFaqPage() {
     }
   };
 
-
   useEffect(() => {
     fetchFaqs();
   }, []);
@@ -60,34 +53,26 @@ export default function PakarFaqPage() {
       f.nama_lengkap?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Fungsi saat ikon hapus diklik
   const triggerDelete = (uid: string) => {
     setSelectedUid(uid);
     setOpenAlert(true);
   };
 
-  // Proses hapus setelah konfirmasi "Ya"
   const handleConfirmDelete = async () => {
     if (!selectedUid) return;
-
     setLoadingDelete(true);
     try {
-      // API Asumsi
-      const res = await fetchApi(`/api/faq/deleteFaq/${selectedUid}`, {
+      const res = await fetchApi(`/api/gurubk/faq/deleteFaq/${selectedUid}`, {
         method: 'DELETE',
       });
-      const json = await res.json().catch(() => ({}));
-
-      if (res.ok || json.Status === 'Success') {
+      if (res.ok) {
         toast.success('Pertanyaan berhasil dihapus');
         setFaqs((prev) => prev.filter((item) => item.faqs_uid !== selectedUid));
       } else {
-        // Dummy Simulator Delete
-        toast.success('Pertanyaan berhasil dihapus (Mode DUMMY)');
-        setFaqs((prev) => prev.filter((item) => item.faqs_uid !== selectedUid));
+        toast.error('Gagal menghapus pertanyaan');
       }
     } catch (error) {
-      toast.error('Gagal menghapus pertanyaan');
+      toast.error('Terjadi kesalahan jaringan');
     } finally {
       setLoadingDelete(false);
       setOpenAlert(false);
@@ -99,18 +84,18 @@ export default function PakarFaqPage() {
     <div className="max-w-6xl mx-auto space-y-6 pb-20">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
         <div className="space-y-1">
-          <h1 className="text-3xl font-bold text-slate-900">Data Konsultasi Tanya Jawab (FAQ)</h1>
-          <p className="text-sm font-medium text-slate-500">Daftar pertanyaan dari pengguna siswa yang perlu diberikan tanggapan.</p>
+          <h1 className="text-3xl font-bold text-slate-900">Konsultasi Siswa (FAQ)</h1>
+          <p className="text-sm font-medium text-slate-500">Daftar pertanyaan dari siswa di sekolah Anda.</p>
         </div>
       </div>
 
       <div className="relative max-w-md">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
         <input 
-          placeholder="Cari berdasarkan NISN atau Nama Lengkap..." 
+          placeholder="Cari NISN atau Nama..." 
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-slate-900/20 focus:border-slate-900 outline-none text-sm shadow-sm" 
+          className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-900/20 focus:border-blue-900 outline-none text-sm shadow-sm" 
         />
       </div>
 
@@ -121,8 +106,8 @@ export default function PakarFaqPage() {
               <TableRow>
                 <TableHead className="py-5 font-bold text-slate-700 pl-6 w-[80px]">No.</TableHead>
                 <TableHead className="font-bold text-slate-700">NISN</TableHead>
-                <TableHead className="font-bold text-slate-700">Nama Lengkap</TableHead>
-                <TableHead className="font-bold text-slate-700">Isi Pesan Singkat</TableHead>
+                <TableHead className="font-bold text-slate-700">Nama Siswa</TableHead>
+                <TableHead className="font-bold text-slate-700">Pertanyaan</TableHead>
                 <TableHead className="font-bold text-slate-700">Status</TableHead>
                 <TableHead className="text-right px-6 font-bold text-slate-700">Aksi</TableHead>
               </TableRow>
@@ -132,12 +117,12 @@ export default function PakarFaqPage() {
                  <TableRow>
                    <TableCell colSpan={6} className="h-40 text-center text-slate-400">
                      <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3" />
-                     Memuat data tanya jawab...
+                     Memuat data...
                    </TableCell>
                  </TableRow>
               ) : filteredFaqs.length > 0 ? (
                 filteredFaqs.map((faq, idx) => (
-                  <TableRow key={faq.faqs_uid || idx} className="hover:bg-slate-50/50 transition-colors">
+                  <TableRow key={faq.faqs_uid} className="hover:bg-slate-50/50 transition-colors">
                     <TableCell className="font-medium text-slate-500 py-4 pl-6 text-center">{idx + 1}</TableCell>
                     <TableCell className="font-bold text-slate-900">{faq.nisn}</TableCell>
                     <TableCell className="text-slate-700 font-semibold">{faq.nama_lengkap}</TableCell>
@@ -146,13 +131,13 @@ export default function PakarFaqPage() {
                       {faq.status === 'Terjawab' ? (
                         <span className="px-3 py-1 bg-green-50 text-green-700 border border-green-100 rounded-lg text-xs font-bold tracking-wide">Terjawab</span>
                       ) : (
-                        <span className="px-3 py-1 bg-amber-50 text-amber-700 border border-amber-100 rounded-lg text-xs font-bold tracking-wide">Menunggu Balasan</span>
+                        <span className="px-3 py-1 bg-amber-50 text-amber-700 border border-amber-100 rounded-lg text-xs font-bold tracking-wide">Menunggu</span>
                       )}
                     </TableCell>
                     <TableCell className="text-right px-6">
                       <div className="flex justify-end gap-1">
-                        <Link href={`/pakar/faq/reply/${faq.faqs_uid}`}>
-                          <Button variant="ghost" size="icon" className="text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-all rounded-lg" title="Balas Pertanyaan">
+                        <Link href={`/gurubk/faq/reply/${faq.faqs_uid}`}>
+                          <Button variant="ghost" size="icon" className="text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-all rounded-lg" title="Balas">
                             <Pencil className="w-4 h-4" />
                           </Button>
                         </Link>
@@ -166,7 +151,7 @@ export default function PakarFaqPage() {
               ) : (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center py-20 text-slate-400 font-medium italic">
-                    Belum ada data pertanyaan dari siswa.
+                    Belum ada pertanyaan dari siswa Anda.
                   </TableCell>
                 </TableRow>
               )}
@@ -175,7 +160,6 @@ export default function PakarFaqPage() {
         </CardContent>
       </Card>
 
-      {/* --- ALERT DIALOG KONFIRMASI HAPUS --- */}
       <AlertDialog open={openAlert} onOpenChange={setOpenAlert}>
         <AlertDialogContent className="bg-white rounded-2xl border-none shadow-2xl max-w-sm">
           <AlertDialogHeader>
@@ -184,7 +168,7 @@ export default function PakarFaqPage() {
             </div>
             <AlertDialogTitle className="text-xl font-bold text-slate-900">Hapus Pertanyaan?</AlertDialogTitle>
             <AlertDialogDescription className="text-slate-500 leading-relaxed text-sm">
-              Apakah Anda yakin ingin menghapus pertanyaan FAQ ini? Data percakapan akan dibersihkan.
+              Tindakan ini tidak dapat dibatalkan.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="mt-6 gap-2">
