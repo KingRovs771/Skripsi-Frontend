@@ -46,7 +46,7 @@ export default function PakarEditArticlePage() {
     title: '',
     content: '',
     category: '',
-    status: 1, // 1 = Draft, 0 = Publish
+    status: 0, // 0 = Draft, 1 = Publish
   });
 
   // Fetch data awal
@@ -77,8 +77,8 @@ export default function PakarEditArticlePage() {
               title: currentArticle.judul_article || '',
               content: currentArticle.isi_article || '',
               category: currentArticle.category?.category_uid || currentArticle.category_uid || '',
-              // Pastikan status dipetakan dengan benar, 0 itu Published, 1 itu Draft
-              status: currentArticle.status === 0 ? 0 : 1,
+              // Pastikan status dipetakan dengan benar, 1 itu Published, 0 itu Draft
+              status: currentArticle.status === 1 ? 1 : 0,
             });
 
             // Set Thumbnail dari endpoint gambar statis backend
@@ -251,8 +251,8 @@ export default function PakarEditArticlePage() {
                 value={formData.status}
                 onChange={(e) => setFormData({ ...formData, status: Number(e.target.value) })}
               >
-                <option value="1">Draft (Simpan Sementara)</option>
-                <option value="0">Publish (Tayangkan Publik)</option>
+                <option value="0">Draft (Simpan Sementara)</option>
+                <option value="1">Publish (Tayangkan Publik)</option>
               </select>
             </div>
 

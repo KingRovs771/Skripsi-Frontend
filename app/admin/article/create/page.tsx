@@ -62,7 +62,7 @@ export default function CreateArticlePage() {
     title: '',
     content: '',
     category: '',
-    status: 1,
+    status: 0,
   });
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -242,8 +242,8 @@ export default function CreateArticlePage() {
                 value={formData.status}
                 onChange={(e) => setFormData({ ...formData, status: Number(e.target.value) })}
               >
-                <option value="1">Draft</option>
-                <option value="0">Publish</option>
+                <option value="0">Draft</option>
+                <option value="1">Publish</option>
               </select>
             </div>
 

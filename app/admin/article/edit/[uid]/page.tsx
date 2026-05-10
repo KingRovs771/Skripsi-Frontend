@@ -72,7 +72,7 @@ export default function EditArticlePage() {
         const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
         // Ambil detail artikel menggunakan endpoint detail agar isi_article dan kategori ada
-        const artRes = await fetch(`${baseUrl}/api/article/admin/getArtikelByUID/${uid}`);
+        const artRes = await fetchApi(`/api/article/admin/getArticleUID/${uid}`, { method: 'GET' });
         if (artRes.ok) {
           const artJson = await artRes.json();
           const currentArticle = artJson.data || artJson.Data;
@@ -298,8 +298,8 @@ export default function EditArticlePage() {
                 value={formData.status}
                 onChange={(e) => setFormData({ ...formData, status: Number(e.target.value) })}
               >
-                <option value="1">Draft</option>
-                <option value="0">Publish</option>
+                <option value="0">Draft</option>
+                <option value="1">Publish</option>
               </select>
             </div>
 

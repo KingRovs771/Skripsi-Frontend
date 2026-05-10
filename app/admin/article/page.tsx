@@ -1,15 +1,23 @@
 'use client';
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { PlusCircle, Pencil, Trash2, Loader2, Eye } from 'lucide-react';
+import { PlusCircle, Pencil, Trash2, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { fetchApi } from '@/lib/api';
-
-// Import komponen AlertDialog
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface ArticleData {
   article_uid: string;
@@ -17,7 +25,6 @@ interface ArticleData {
   author: string;
   category_name?: string;
   created_at?: string;
-  // Opsional jika ada endpoint detail
   isi_article?: string;
   status?: number;
   thumbnails?: string;
@@ -39,7 +46,6 @@ export default function PakarArticlePage() {
   const fetchArticles = async () => {
     setLoading(true);
     try {
-      // Endpoint yang digunakan menyesuaikan backend Golang
       const response = await fetchApi('/api/article/admin/getArticles', { method: 'GET' });
       const data = await response.json().catch(() => ({}));
 
@@ -55,20 +61,17 @@ export default function PakarArticlePage() {
     }
   };
 
-  // 1. Fungsi saat tombol sampah diklik (Membuka Popup)
   const onClickDelete = (id: string) => {
     setSelectedArticleId(id);
     setOpenConfirm(true);
   };
 
-  // 2. Fungsi saat User klik "Hapus" di dalam Popup
   const handleConfirmDelete = async () => {
     if (!selectedArticleId) return;
 
     setIsDeleting(true);
     try {
-      // Sesuaikan URL jika format Golangnya berbeda `/pakar/article/${selectedArticleId}`
-      const response = await fetchApi(`/api/article/admin/deleteArticles/${selectedArticleId}`, { method: 'DELETE' });
+      const response = await fetchApi(`/api/article/admin/deleteArticle/${selectedArticleId}`, { method: 'DELETE' });
       const data = await response.json().catch(() => ({}));
 
       if (response.ok) {
@@ -126,73 +129,90 @@ export default function PakarArticlePage() {
                   </TableCell>
                 </TableRow>
               ) : (
-                articles.map((article) => (
-                  <TableRow key={article.article_uid} className="hover:bg-slate-50/50 transition-colors">
-                    <TableCell className="font-medium py-4">
-                      <div className="flex items-center gap-4">
-                        <div className="w-16 h-12 rounded bg-slate-100 overflow-hidden shrink-0 border border-slate-200">
-                          <img
-                            src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/home/articles/${article.article_uid}/thumbnail`}
-                            alt={article.judul_article}
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              // Fallback jika tidak ada gambar / 404
-                              e.currentTarget.style.display = 'none';
-                              e.currentTarget.parentElement!.innerHTML = '<div class="w-full h-full flex items-center justify-center text-slate-400"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="opacity-50"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></div>';
-                            }}
-                          />
+                articles.map((article) => {
+                  return (
+                    <TableRow key={article.article_uid} className="hover:bg-slate-50/50 transition-colors">
+                      <TableCell className="font-medium py-4">
+                        <div className="flex items-center gap-4">
+                          <div className="w-16 h-12 rounded bg-slate-100 overflow-hidden shrink-0 border border-slate-200 relative">
+                            <img
+                              src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/home/articles/${article.article_uid}/thumbnail`}
+                              alt={article.judul_article}
+                              className="w-full h-full object-cover relative z-10"
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                              }}
+                            />
+                            <div className="absolute inset-0 flex items-center justify-center text-slate-300 bg-slate-50">
+                              <Loader2 className="w-4 h-4 animate-pulse" />
+                            </div>
+                          </div>
+                          <div>
+                            <p className="line-clamp-2 text-sm max-w-[250px] font-bold text-slate-900">{article.judul_article}</p>
+                            <p className="text-xs text-slate-400 font-normal py-0.5">Author: {article.author}</p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="line-clamp-2 text-sm max-w-[250px] font-bold text-slate-900">{article.judul_article}</p>
-                          <p className="text-xs text-slate-400 font-normal py-0.5">Author: {article.author}</p>
+                      </TableCell>
+                      <TableCell>
+                        <span className="px-3 py-1 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold truncate max-w-[150px] inline-block">
+                          {article.category_name || '-'}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <span
+                          className={`px-2 py-1 text-[10px] font-black uppercase tracking-wider rounded-md ${article.status === 1 ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600'
+                            }`}
+                        >
+                          {article.status === 1 ? 'Published' : 'Draft'}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-right pr-6">
+                        <div className="flex justify-end gap-1">
+                          <Link href={`/admin/article/edit/${article.article_uid}`}>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-all rounded-lg"
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                          </Link>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-slate-400 hover:text-red-600 hover:bg-red-50 transition-all rounded-lg"
+                            onClick={() => onClickDelete(article.article_uid)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
                         </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {/* Kalau Golang belum join tabel otomatis, mungkin hanya dpt UID */}
-                      <span className="px-3 py-1 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold truncate max-w-[150px] inline-block">
-                        {article.category_name || '-'}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      {/* Status bisa dipindah jika backend merepresentasikan 1 sbg publish dll */}
-                      <span className="px-2 py-1 text-[10px] font-black uppercase tracking-wider rounded-md bg-green-100 text-green-700">
-                        {article.status === 1 ? 'Draft' : 'Published'}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-right pr-6">
-                      <Link href={`/admin/article/edit/${article.article_uid}`}>
-                        <Button variant="ghost" size="icon" className="mr-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-all rounded-lg">
-                          <Pencil className="w-4 h-4" />
-                        </Button>
-                      </Link>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-slate-400 hover:text-red-600 hover:bg-red-50 transition-all rounded-lg"
-                        onClick={() => onClickDelete(article.article_uid)} // Panggil fungsi buka popup
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
               )}
             </TableBody>
           </Table>
         </CardContent>
       </Card>
 
-      {/* --- MODAL KONFIRMASI (CLEAN WHITE) --- */}
       <AlertDialog open={openConfirm} onOpenChange={setOpenConfirm}>
         <AlertDialogContent className="bg-white rounded-3xl border-none shadow-2xl max-w-sm">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-xl font-bold text-slate-900">Hapus Artikel?</AlertDialogTitle>
-            <AlertDialogDescription className="text-slate-500 leading-relaxed">Tindakan ini tidak dapat dibatalkan. Artikel yang dihapus akan hilang secara permanen dari database.</AlertDialogDescription>
+            <AlertDialogDescription className="text-slate-500 leading-relaxed">
+              Tindakan ini tidak dapat dibatalkan. Artikel yang dihapus akan hilang secara permanen dari database.
+            </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="mt-6 gap-3">
-            <AlertDialogCancel className="border-slate-200 rounded-xl hover:bg-slate-50 transition-all font-medium text-slate-600">Batal</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmDelete} disabled={isDeleting} className="bg-red-600 hover:bg-red-700 text-white rounded-xl font-medium px-6 transition-all">
+            <AlertDialogCancel className="border-slate-200 rounded-xl hover:bg-slate-50 transition-all font-medium text-slate-600">
+              Batal
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              disabled={isDeleting}
+              className="bg-red-600 hover:bg-red-700 text-white rounded-xl font-medium px-6 transition-all"
+            >
               {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Ya, Hapus'}
             </AlertDialogAction>
           </AlertDialogFooter>

@@ -81,7 +81,7 @@ export default function PakarCreateArticlePage() {
     title: '',
     content: '',
     category: '',
-    status: 1, // Default to Draft
+    status: 0, // Default to Draft
   });
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -259,8 +259,8 @@ export default function PakarCreateArticlePage() {
                 value={formData.status}
                 onChange={(e) => setFormData({ ...formData, status: Number(e.target.value) })}
               >
-                <option value="1">Draft (Simpan Sementara)</option>
-                <option value="2">Publish (Tayangkan Publik)</option>
+                <option value="0">Draft (Simpan Sementara)</option>
+                <option value="1">Publish (Tayangkan Publik)</option>
               </select>
             </div>
 
