@@ -3,10 +3,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
 import { ArrowLeft, Save, Loader2, Stethoscope, Lock, UserCircle, Trash2 } from 'lucide-react';
-import { fetchApi } from '@/lib/api';
+import { fetchApi, getMediaUrl } from '@/lib/api';
 import { toast } from 'sonner';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
 export default function EditPakar() {
   const router = useRouter();
@@ -182,7 +180,7 @@ export default function EditPakar() {
               <div className="w-28 h-28 rounded-2xl bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center overflow-hidden shrink-0 relative">
                 {displayPhoto ? (
                   <img
-                    src={displayPhoto.startsWith('http') ? displayPhoto : `${API_BASE}${displayPhoto}`}
+                    src={getMediaUrl(displayPhoto) ?? ''}
                     alt="Preview"
                     className="w-full h-full object-cover"
                     onError={(e) => { e.currentTarget.style.display = 'none'; }}

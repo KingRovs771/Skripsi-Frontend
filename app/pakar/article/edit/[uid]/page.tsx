@@ -4,7 +4,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { ArrowLeft, Save, Loader2, Info } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
-import { fetchApi } from '@/lib/api';
+import { fetchApi, buildApiUrl, getMediaUrl } from '@/lib/api';
 import dynamic from 'next/dynamic';
 import 'react-quill-new/dist/quill.snow.css';
 
@@ -64,8 +64,6 @@ export default function PakarEditArticlePage() {
         }
         setLoadingCategories(false);
 
-        const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
-
         // Ambil detail artikel 
         const artRes = await fetchApi(`/api/artikelpakar/getArtikelByUID/${uid}`);
         if (artRes.ok) {
@@ -82,7 +80,9 @@ export default function PakarEditArticlePage() {
             });
 
             // Set Thumbnail dari endpoint gambar statis backend
-            setImagePreview(currentArticle.thumbnail_url?.startsWith('http') ? currentArticle.thumbnail_url : `${baseUrl}/api/home/articles/${uid}/thumbnail`);
+            setImagePreview(
+              getMediaUrl(currentArticle.thumbnail_url) ?? buildApiUrl(`/api/home/articles/${uid}/thumbnail`)
+            );
           } else {
             toast.error('Artikel tidak ditemukan.');
             router.push('/pakar/article');

@@ -3,6 +3,7 @@ import React, { useState, useMemo, useEffect } from "react";
 import ArticleCard from "@/components/ArticleCard";
 import { Input } from "@/components/ui/input";
 import { Search, Loader2 } from "lucide-react";
+import { fetchApi } from "@/lib/api";
 
 export default function ArticleListPage() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -12,9 +13,8 @@ export default function ArticleListPage() {
 
   useEffect(() => {
     const fetchArticles = async () => {
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
       try {
-        const res = await fetch(`${baseUrl}/api/home/articles`);
+        const res = await fetchApi('/api/home/articles');
         const json = await res.json();
         setArticles(json.Data || []);
       } catch (err) {

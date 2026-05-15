@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { PlusCircle, Pencil, Trash2, Loader2, Scale } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
-import { fetchApi } from '@/lib/api';
+import { fetchApi, buildApiUrl, getMediaUrl } from '@/lib/api';
 
 // Import komponen AlertDialog dari Shadcn UI
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
@@ -122,12 +122,10 @@ export default function PakarArticlePage() {
               ) : articles.length > 0 ? (
                 articles.map((article, idx) => {
 
-                  // Deteksi Real URL
-                  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
-                  const isAbsolute = article.thumbnail_url?.startsWith('http');
-                  const validThumbnail = article.thumbnail_url ?
-                    (isAbsolute ? article.thumbnail_url : `${API_URL}${article.thumbnail_url}`)
-                    : `${API_URL}/api/home/articles/${article.article_uid}/thumbnail`;
+                  // Bangun URL thumbnail via getMediaUrl (terpusat di lib/api)
+                  const validThumbnail = article.thumbnail_url
+                    ? (getMediaUrl(article.thumbnail_url) ?? buildApiUrl(`/api/home/articles/${article.article_uid}/thumbnail`))
+                    : buildApiUrl(`/api/home/articles/${article.article_uid}/thumbnail`);
 
                   return (
                     <TableRow key={article.article_uid || idx} className="hover:bg-slate-50/50 transition-colors">

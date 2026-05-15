@@ -2,13 +2,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { fetchApi } from '@/lib/api';
+import { fetchApi, getMediaUrl } from '@/lib/api';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Plus, Search, Pencil, Trash2, Loader2, Stethoscope, ShieldCheck, Mail, Phone, Users, UserCircle } from 'lucide-react';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+import { Plus, Search, Pencil, Trash2, Loader2, ShieldCheck, Mail, Phone, Users, UserCircle } from 'lucide-react';
 
 // ── Tipe Data ──────────────────────────────────────────────────────────────────
 interface Pakar {
@@ -36,8 +34,7 @@ const getUid = (p: Pakar): string =>
 const getPhotoSrc = (p: Pakar): string | null => {
   const raw = p.photo_url ?? p.foto ?? null;
   if (!raw) return null;
-  if (raw.startsWith('http') || raw.startsWith('data:')) return raw;
-  return `${API_BASE}${raw}`;
+  return getMediaUrl(raw);
 };
 
 function PakarAvatar({ pakar }: { pakar: Pakar }) {

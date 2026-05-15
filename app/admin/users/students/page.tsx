@@ -170,46 +170,46 @@ export default function ManajemenSiswa() {
                 filtered.map((student, idx) => {
                   const uid = getUid(student);
                   return (
-                  <TableRow key={uid || idx} className="hover:bg-slate-50/50 transition-colors">
-                    <TableCell className="py-4 pl-6">
-                      <p className="font-bold text-slate-900 text-sm">{student.nama_lengkap}</p>
-                      <p className="text-xs text-slate-400 mt-0.5">{student.email}</p>
-                    </TableCell>
-                    <TableCell className="font-mono text-sm font-semibold text-slate-700">
-                      {student.nisn || '-'}
-                    </TableCell>
-                    <TableCell>
-                      <p className="text-sm font-semibold text-slate-700">
-                        {student.nama_sekolah || '-'}
-                      </p>
-                      <p className="text-xs text-slate-400 mt-0.5 flex items-center gap-1">
-                        <GraduationCap className="w-3 h-3" />
-                        {student.jenjang} · {student.kelas}
-                      </p>
-                    </TableCell>
-                    <TableCell className="text-sm text-slate-600">
-                      {student.no_hp || '-'}
-                    </TableCell>
-                    <TableCell className="text-right pr-6">
-                      <Link href={`/admin/users/students/edit/${uid}`}>
+                    <TableRow key={uid || idx} className="hover:bg-slate-50/50 transition-colors">
+                      <TableCell className="py-4 pl-6">
+                        <p className="font-bold text-slate-900 text-sm">{student.nama_lengkap}</p>
+                        <p className="text-xs text-slate-400 mt-0.5">{student.email}</p>
+                      </TableCell>
+                      <TableCell className="font-mono text-sm font-semibold text-slate-700">
+                        {student.nisn || '-'}
+                      </TableCell>
+                      <TableCell>
+                        <p className="text-sm font-semibold text-slate-700">
+                          {student.nama_sekolah || '-'}
+                        </p>
+                        <p className="text-xs text-slate-400 mt-0.5 flex items-center gap-1">
+                          <GraduationCap className="w-3 h-3" />
+                          {student.jenjang} · {student.kelas}
+                        </p>
+                      </TableCell>
+                      <TableCell className="text-sm text-slate-600">
+                        {student.no_hp || '-'}
+                      </TableCell>
+                      <TableCell className="text-right pr-6">
+                        <Link href={`/admin/users/students/edit/${uid}`}>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="mr-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-all rounded-lg"
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </Button>
+                        </Link>
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="mr-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-all rounded-lg"
+                          className="text-slate-400 hover:text-red-600 hover:bg-red-50 transition-all rounded-lg"
+                          onClick={() => onClickDelete(uid)}
                         >
-                          <Pencil className="w-4 h-4" />
+                          <Trash2 className="w-4 h-4" />
                         </Button>
-                      </Link>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-slate-400 hover:text-red-600 hover:bg-red-50 transition-all rounded-lg"
-                        onClick={() => onClickDelete(uid)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
+                      </TableCell>
+                    </TableRow>
                   );
                 })
               )}

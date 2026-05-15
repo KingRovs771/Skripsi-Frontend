@@ -10,6 +10,7 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { buildApiUrl } from "@/lib/api";
 
 // Definisikan tipe untuk prop 'article'
 type Article = {
@@ -33,7 +34,7 @@ export default function ArticleCard({ article }: { article: Article }) {
       <Link href={`/public/article/${article.slug}`}>
         {/* Menggunakan tag img standar agar tidak error dari domain backend yg blm di-whitelist */}
         <img
-          src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/home/articles/${article.slug}/thumbnail`}
+          src={buildApiUrl(`/api/home/articles/${article.slug}/thumbnail`)}
           alt={article.title}
           className="w-full h-96 object-cover"
           onError={(e) => {

@@ -1,12 +1,12 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import ArticleCard from "@/components/ArticleCard";
+import { buildApiUrl } from "@/lib/api";
 
-// Helper fetch fungsi langsung dari env server agar SSR aman
+// Helper fetch SSR — menggunakan buildApiUrl agar URL API terpusat di lib/api
 async function getHomeArticles() {
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
   try {
-    const res = await fetch(`${baseUrl}/api/home/articles`, { cache: 'no-store' });
+    const res = await fetch(buildApiUrl('/api/home/articles'), { cache: 'no-store' });
     if (!res.ok) return [];
     const json = await res.json();
     return json.Data || [];

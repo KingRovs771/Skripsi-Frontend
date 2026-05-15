@@ -3,11 +3,11 @@ import Link from "next/link";
 import React from "react";
 import SafeImage from "@/components/SafeImage";
 import { ArrowLeft, Calendar, User, Tag, Clock } from "lucide-react";
+import { buildApiUrl } from "@/lib/api";
 
 async function getArticleDetail(slug: string) {
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
   try {
-    const res = await fetch(`${baseUrl}/api/home/articles/${slug}`, { cache: 'no-store' });
+    const res = await fetch(buildApiUrl(`/api/home/articles/${slug}`), { cache: 'no-store' });
     if (!res.ok) return null;
     const json = await res.json();
     return json.Data || json.data || null;
@@ -17,9 +17,8 @@ async function getArticleDetail(slug: string) {
 }
 
 async function getOtherArticles(currentSlug: string) {
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
   try {
-    const res = await fetch(`${baseUrl}/api/home/articles`, { cache: 'no-store' });
+    const res = await fetch(buildApiUrl('/api/home/articles'), { cache: 'no-store' });
     if (!res.ok) return [];
     const json = await res.json();
     const all = json.data || json.Data || [];
@@ -49,7 +48,6 @@ export default async function ArticleDetailPage({
     notFound();
   }
 
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
   const dateObj = new Date(article.created_at || Date.now());
   const dateString = dateObj.toLocaleDateString('id-ID', {
     year: 'numeric',
@@ -79,7 +77,7 @@ export default async function ArticleDetailPage({
 
               {/* Hero Image */}
               <SafeImage
-                src={`${baseUrl}/api/home/articles/${article.article_uid}/thumbnail`}
+                src={buildApiUrl(`/api/home/articles/${article.article_uid}/thumbnail`)}
                 alt={article.judul_article}
                 className="w-full h-52 sm:h-72 object-cover"
               />
@@ -166,7 +164,7 @@ export default async function ArticleDetailPage({
                     >
                       <div className="w-20 h-16 shrink-0 rounded-lg overflow-hidden bg-gray-100">
                         <SafeImage
-                          src={`${baseUrl}/api/home/articles/${a.article_uid}/thumbnail`}
+                          src={buildApiUrl(`/api/home/articles/${a.article_uid}/thumbnail`)}
                           alt={a.judul_article || a.title}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         />
@@ -203,7 +201,7 @@ export default async function ArticleDetailPage({
                     >
                       <div className="w-16 h-12 shrink-0 rounded-lg overflow-hidden bg-gray-100">
                         <SafeImage
-                          src={`${baseUrl}/api/home/articles/${a.article_uid}/thumbnail`}
+                          src={buildApiUrl(`/api/home/articles/${a.article_uid}/thumbnail`)}
                           alt={a.judul_article || a.title || ''}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         />

@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { PlusCircle, Pencil, Trash2, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
-import { fetchApi } from '@/lib/api';
+import { fetchApi, buildApiUrl } from '@/lib/api';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -136,7 +136,7 @@ export default function PakarArticlePage() {
                         <div className="flex items-center gap-4">
                           <div className="w-16 h-12 rounded bg-slate-100 overflow-hidden shrink-0 border border-slate-200 relative">
                             <img
-                              src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/home/articles/${article.article_uid}/thumbnail`}
+                              src={buildApiUrl(`/api/home/articles/${article.article_uid}/thumbnail`)}
                               alt={article.judul_article}
                               className="w-full h-full object-cover relative z-10"
                               onError={(e) => {
