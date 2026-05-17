@@ -29,19 +29,16 @@ async function getOtherArticles(currentSlug: string) {
   }
 }
 
-function stripHtml(html: string) {
-  if (!html) return '';
-  return html.replace(/<[^>]*>?/gm, '').trim();
-}
 
 export default async function ArticleDetailPage({
   params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }) {
+  const { slug } = await params;
   const [article, otherArticles] = await Promise.all([
-    getArticleDetail(params.slug),
-    getOtherArticles(params.slug),
+    getArticleDetail(slug),
+    getOtherArticles(slug),
   ]);
 
   if (!article) {
