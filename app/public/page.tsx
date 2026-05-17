@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import ArticleCard from "@/components/ArticleCard";
 import { buildApiUrl } from "@/lib/api";
-
+import { Analytics } from "@vercel/analytics/next"
 // Helper fetch SSR — menggunakan buildApiUrl agar URL API terpusat di lib/api
 async function getHomeArticles() {
   try {
@@ -21,6 +21,7 @@ export default async function LandingPage() {
 
   return (
     <>
+      <Analytics />
       {/* Hero Section */}
       <section className="bg-gradient-to-b from-blue-100 to-slate-50 py-20 md:py-32">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
