@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Quote, Sparkles, Lightbulb, Heart } from 'lucide-react';
+import { fetchApi } from '@/lib/api';
 
 // Daftar kata-kata harian (Mental Health & Education Focus)
 const dailyQuotes = [
@@ -33,6 +34,7 @@ const dailyQuotes = [
 
 export default function StudentsDashboardPage() {
   const [quote, setQuote] = useState(dailyQuotes[0]);
+  const [sekolah, setSekolah] = useState({ nama_sekolah: 'Memuat...', npsn: '...' });
 
   // Efek untuk mengambil kutipan acak setiap kali load
   useEffect(() => {
@@ -40,12 +42,31 @@ export default function StudentsDashboardPage() {
     setQuote(dailyQuotes[randomIndex]);
   }, []);
 
+  // Fetch data sekolah dari profil siswa
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const res = await fetchApi('/api/profileStudents', { method: 'GET' });
+        const json = await res.json().catch(() => ({}));
+        if (res.ok && json.Data) {
+          setSekolah({
+            nama_sekolah: json.Data.nama_sekolah || 'Sekolah Tidak Diketahui',
+            npsn: json.Data.npsn || '-',
+          });
+        }
+      } catch (err) {
+        console.warn('Gagal memuat data sekolah', err);
+      }
+    };
+    fetchProfile();
+  }, []);
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <h1 className="text-3xl font-black text-slate-900 tracking-tight">Dashboard Statistik</h1>
-          <p className="text-slate-500 font-medium">SMP Negeri 1 Sragen • ID: 201312960</p>
+          <p className="text-slate-500 font-medium">{sekolah.nama_sekolah} • ID: {sekolah.npsn}</p>
         </div>
         <div className="px-4 py-2 bg-white border border-slate-200 rounded-xl shadow-sm text-sm font-bold text-slate-600">{new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</div>
       </div>
@@ -75,7 +96,7 @@ export default function StudentsDashboardPage() {
         </CardContent>
 
         <div className="absolute bottom-6 w-full text-center">
-          <p className="text-[10px] text-white/20 uppercase tracking-widest font-black">Daily Insight for SMPN 1 Sragen</p>
+          <p className="text-[10px] text-white/20 uppercase tracking-widest font-black">Daily Insight for {sekolah.nama_sekolah}</p>
         </div>
       </Card>
 
