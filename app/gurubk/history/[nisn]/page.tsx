@@ -38,6 +38,8 @@ interface TestResult {
   is_visible_to_student: boolean;
   // Status review oleh guru BK
   reviewed_by_gurubk: boolean;
+  nn_depresi_confidence?: number;
+  nn_cemas_confidence?: number;
 }
 
 interface StudentInfo {
@@ -425,13 +427,29 @@ export default function GurubkStudentDetailPage() {
               <div>
                 <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Hasil Diagnosis</h4>
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between p-3 rounded-xl border border-slate-200">
-                    <span className="text-sm font-semibold text-slate-600">Depresi</span>
-                    <span className="text-sm font-bold text-slate-900">{selectedTest.depresi_penyakit || 'Normal'}</span>
+                  <div className="p-3 rounded-xl border border-slate-200 space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-semibold text-slate-600">Depresi</span>
+                      <span className="text-sm font-bold text-slate-900">{selectedTest.depresi_penyakit || 'Normal'}</span>
+                    </div>
+                    {selectedTest.nn_depresi_confidence !== undefined && selectedTest.nn_depresi_confidence > 0 && (
+                      <div className="flex items-center justify-between text-xs text-slate-400">
+                        <span>Confidence Score</span>
+                        <span className="font-semibold text-slate-600">{selectedTest.nn_depresi_confidence}%</span>
+                      </div>
+                    )}
                   </div>
-                  <div className="flex items-center justify-between p-3 rounded-xl border border-slate-200">
-                    <span className="text-sm font-semibold text-slate-600">Kecemasan</span>
-                    <span className="text-sm font-bold text-slate-900">{selectedTest.cemas_penyakit || 'Normal'}</span>
+                  <div className="p-3 rounded-xl border border-slate-200 space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-semibold text-slate-600">Kecemasan</span>
+                      <span className="text-sm font-bold text-slate-900">{selectedTest.cemas_penyakit || 'Normal'}</span>
+                    </div>
+                    {selectedTest.nn_cemas_confidence !== undefined && selectedTest.nn_cemas_confidence > 0 && (
+                      <div className="flex items-center justify-between text-xs text-slate-400">
+                        <span>Confidence Score</span>
+                        <span className="font-semibold text-slate-600">{selectedTest.nn_cemas_confidence}%</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

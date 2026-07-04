@@ -23,6 +23,10 @@ interface MyTestHistory {
   rekomendasi: string;
   is_visible_to_student: boolean;
   reviewed_by_gurubk: boolean;
+  depresi_penyakit?: string;
+  cemas_penyakit?: string;
+  nn_depresi_confidence?: number;
+  nn_cemas_confidence?: number;
 }
 
 function getCategoryStyle(skor: number, kategori: string) {
@@ -139,6 +143,34 @@ export default function StudentHistoryPage() {
                               </p>
                             </div>
                           </div>
+
+                          {/* Detail Diagnosis & Confidence Breakdown */}
+                          {(item.depresi_penyakit || item.cemas_penyakit) && (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-1">
+                                <div className="flex justify-between items-center">
+                                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Depresi</span>
+                                  {item.nn_depresi_confidence !== undefined && item.nn_depresi_confidence > 0 && (
+                                    <span className="text-[10px] font-bold text-slate-500 bg-slate-200/60 px-2 py-0.5 rounded-full">
+                                      {item.nn_depresi_confidence}% Confidence
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-sm font-bold text-slate-800">{item.depresi_penyakit || 'Normal'}</p>
+                              </div>
+                              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-1">
+                                <div className="flex justify-between items-center">
+                                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Kecemasan</span>
+                                  {item.nn_cemas_confidence !== undefined && item.nn_cemas_confidence > 0 && (
+                                    <span className="text-[10px] font-bold text-slate-500 bg-slate-200/60 px-2 py-0.5 rounded-full">
+                                      {item.nn_cemas_confidence}% Confidence
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-sm font-bold text-slate-800">{item.cemas_penyakit || 'Normal'}</p>
+                              </div>
+                            </div>
+                          )}
 
                           {/* Bagian Rekomendasi */}
                           {item.rekomendasi && (
