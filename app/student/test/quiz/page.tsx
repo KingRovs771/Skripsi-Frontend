@@ -7,7 +7,6 @@ import { useRouter } from 'next/navigation';
 import { Progress } from '@/components/ui/progress';
 import { fetchApi } from '@/lib/api';
 
-// ── TIPE DATA ──────────────────────────────────────────────────────────────────
 interface Pertanyaan {
   pertanyaan_uid: string;
   kode_pertanyaan: string;
@@ -16,7 +15,6 @@ interface Pertanyaan {
   bobot: number;
 }
 
-// Opsi jawaban Likert Scale 4 poin (sesuai standar PHQ-9 / GAD-7)
 const LIKERT_OPTIONS = [
   { label: 'Tidak Pernah', value: 0 },
   { label: 'Beberapa Hari', value: 1 },
@@ -30,18 +28,14 @@ export default function DiagnosisQuizPage() {
   const router = useRouter();
   const [appState, setAppState] = useState<AppState>('LOADING');
 
-  // Data Pertanyaan dari API
   const [questions, setQuestions] = useState<Pertanyaan[]>([]);
 
-  // Session UID dari startTes (disimpan di sessionStorage oleh halaman intro)
   const [sessionUid, setSessionUid] = useState<string>('');
 
-  // Status Tes
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [ceritaSiswa, setCeritaSiswa] = useState<string>('');
 
-  // ── FETCH PERTANYAAN + BACA SESSION UID ────────────────────────────────────
   useEffect(() => {
     // Baca session_uid yang disimpan saat startTes di halaman intro
     const storedUid = sessionStorage.getItem('diagnosis_session_uid') || '';
@@ -78,7 +72,6 @@ export default function DiagnosisQuizPage() {
     fetchQuestions();
   }, [router]);
 
-  // ── HANDLER JAWABAN ────────────────────────────────────────────────────────
   const handleAnswer = (value: number) => {
     const currentQ = questions[currentIndex];
     const newAnswers = { ...answers, [currentQ.kode_pertanyaan]: value };
@@ -89,19 +82,16 @@ export default function DiagnosisQuizPage() {
         setCurrentIndex((prev) => prev + 1);
       }, 300);
     } else {
-      // Semua pertanyaan sudah dijawab → lanjut ke form cerita/feedback
       setTimeout(() => {
         setAppState('FEEDBACK');
       }, 300);
     }
   };
 
-  // ── SUBMIT JAWABAN KE API ──────────────────────────────────────────────────
   const handleSubmitTest = async () => {
     setAppState('COMPUTING');
     const userUid = localStorage.getItem('student_uid') || '';
 
-    // Payload sesuai endpoint /api/diagnosis/submitTes
     const payload = {
       session_id: sessionUid,
       user_uid: userUid,
@@ -121,7 +111,6 @@ export default function DiagnosisQuizPage() {
       const json = await res.json().catch(() => ({}));
 
       if (res.ok) {
-        // Bersihkan session_uid setelah berhasil submit
         sessionStorage.removeItem('diagnosis_session_uid');
         setAppState('RESULT');
       } else {
@@ -134,9 +123,6 @@ export default function DiagnosisQuizPage() {
     }
   };
 
-  // ──────────────────────────────────────────────────────────────────────────
-  // VIEW: LOADING PERTANYAAN
-  // ──────────────────────────────────────────────────────────────────────────
   if (appState === 'LOADING') {
     return (
       <div className="max-w-2xl mx-auto py-32 px-4 flex flex-col items-center justify-center text-center">
@@ -152,9 +138,6 @@ export default function DiagnosisQuizPage() {
     );
   }
 
-  // ──────────────────────────────────────────────────────────────────────────
-  // VIEW: ERROR
-  // ──────────────────────────────────────────────────────────────────────────
   if (appState === 'ERROR') {
     return (
       <div className="max-w-2xl mx-auto py-32 px-4 flex flex-col items-center justify-center text-center">
@@ -167,9 +150,6 @@ export default function DiagnosisQuizPage() {
     );
   }
 
-  // ──────────────────────────────────────────────────────────────────────────
-  // VIEW: FEEDBACK (CERITA SISWA)
-  // ──────────────────────────────────────────────────────────────────────────
   if (appState === 'FEEDBACK') {
     return (
       <div className="max-w-2xl mx-auto py-16 px-4 fade-in">
@@ -183,7 +163,7 @@ export default function DiagnosisQuizPage() {
               <p className="text-slate-500 font-medium text-sm">Ceritakan masalah atau beban yang sedang kamu rasakan (Opsional).</p>
             </div>
           </div>
-          
+
           <div className="mb-8">
             <textarea
               className="w-full h-48 p-5 border-2 border-slate-200 rounded-2xl bg-slate-50 focus:bg-white focus:border-slate-900 focus:ring-0 transition-all resize-none text-slate-700 placeholder:text-slate-400"
@@ -217,9 +197,6 @@ export default function DiagnosisQuizPage() {
     );
   }
 
-  // ──────────────────────────────────────────────────────────────────────────
-  // VIEW: COMPUTING ENGINE (MENGIRIM JAWABAN)
-  // ──────────────────────────────────────────────────────────────────────────
   if (appState === 'COMPUTING') {
     return (
       <div className="max-w-2xl mx-auto py-32 px-4 flex flex-col items-center justify-center text-center fade-in">
@@ -235,9 +212,6 @@ export default function DiagnosisQuizPage() {
     );
   }
 
-  // ──────────────────────────────────────────────────────────────────────────
-  // VIEW: RESULT (DISERAHKAN KE GURU BK)
-  // ──────────────────────────────────────────────────────────────────────────
   if (appState === 'RESULT') {
     return (
       <div className="max-w-3xl mx-auto py-16 px-4 fade-in slide-in-from-bottom-8">
@@ -269,16 +243,11 @@ export default function DiagnosisQuizPage() {
       </div>
     );
   }
-
-  // ──────────────────────────────────────────────────────────────────────────
-  // VIEW: TEST IN PROGRESS (THE QUIZ WIZARD)
-  // ──────────────────────────────────────────────────────────────────────────
   const currentQ = questions[currentIndex];
   const progressPercent = (currentIndex / questions.length) * 100;
 
   return (
     <div className="max-w-3xl mx-auto py-10 px-4">
-      {/* Navigasi Kembali */}
       <button
         onClick={() => router.back()}
         className="mb-8 flex items-center text-sm font-bold text-slate-400 hover:text-slate-700 transition-colors"
@@ -300,9 +269,8 @@ export default function DiagnosisQuizPage() {
         <Progress value={progressPercent} className="h-2.5 bg-slate-100 rounded-full overflow-hidden [&>div]:bg-slate-900" />
       </div>
 
-      {/* Question Card */}
       <div className="bg-slate-900 border border-slate-800 rounded-3xl shadow-xl p-8 md:p-12 mb-8 animate-in fade-in zoom-in-95 duration-300 relative overflow-hidden">
-        {/* Ornamen */}
+
         <div className="absolute top-0 right-0 p-8 scale-150 opacity-10 pointer-events-none">
           <Brain className="w-32 h-32 text-white" />
         </div>
@@ -315,7 +283,6 @@ export default function DiagnosisQuizPage() {
         </h1>
       </div>
 
-      {/* Answers Grid — 4 Pilihan Likert Scale */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {LIKERT_OPTIONS.map((opt, i) => {
           const isSelected = answers[currentQ.kode_pertanyaan] === opt.value;
@@ -324,8 +291,8 @@ export default function DiagnosisQuizPage() {
               key={i}
               onClick={() => handleAnswer(opt.value)}
               className={`text-left px-6 py-5 rounded-2xl border-2 transition-all duration-200 font-bold flex items-center justify-between ${isSelected
-                  ? 'bg-slate-900 border-slate-900 text-white shadow-md shadow-slate-900/30 ring-2 ring-slate-900/50 scale-[0.98]'
-                  : 'bg-white border-slate-200 text-slate-600 hover:border-slate-400 hover:bg-slate-50 active:scale-[0.98]'
+                ? 'bg-slate-900 border-slate-900 text-white shadow-md shadow-slate-900/30 ring-2 ring-slate-900/50 scale-[0.98]'
+                : 'bg-white border-slate-200 text-slate-600 hover:border-slate-400 hover:bg-slate-50 active:scale-[0.98]'
                 }`}
             >
               <span className="text-[15px]">{opt.label}</span>
@@ -335,7 +302,6 @@ export default function DiagnosisQuizPage() {
         })}
       </div>
 
-      {/* Footer Nav */}
       <div className="mt-12 flex justify-between items-center border-t border-slate-200 pt-6">
         <Button
           variant="ghost"

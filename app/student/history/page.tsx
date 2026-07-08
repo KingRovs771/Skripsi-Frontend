@@ -10,6 +10,9 @@ import {
   CheckCircle2,
   EyeOff,
   Clock,
+  Brain,
+  BadgeCheck,
+  AlertTriangle,
 } from 'lucide-react';
 import Link from 'next/link';
 import { fetchApi } from '@/lib/api';
@@ -147,30 +150,100 @@ export default function StudentHistoryPage() {
                           {/* Detail Diagnosis & Confidence Breakdown */}
                           {(item.depresi_penyakit || item.cemas_penyakit) && (
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-1">
+                              {/* Depresi */}
+                              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-2">
                                 <div className="flex justify-between items-center">
                                   <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Depresi</span>
-                                  {item.nn_depresi_confidence !== undefined && item.nn_depresi_confidence > 0 && (
-                                    <span className="text-[10px] font-bold text-slate-500 bg-slate-200/60 px-2 py-0.5 rounded-full">
-                                      {item.nn_depresi_confidence}% Confidence
+                                  {item.nn_depresi_confidence != null && (
+                                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                      item.nn_depresi_confidence >= 80 ? 'bg-green-100 text-green-700' :
+                                      item.nn_depresi_confidence >= 60 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-600'
+                                    }`}>
+                                      {item.nn_depresi_confidence}%
                                     </span>
                                   )}
                                 </div>
                                 <p className="text-sm font-bold text-slate-800">{item.depresi_penyakit || 'Normal'}</p>
+                                {item.nn_depresi_confidence != null ? (
+                                  <div className="space-y-1">
+                                    <div className="flex items-center gap-1 text-[10px] text-slate-400 font-semibold">
+                                      <Brain className="w-3 h-3" /> Neural Network Confidence
+                                    </div>
+                                    <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                                      <div
+                                        className={`h-full rounded-full ${
+                                          item.nn_depresi_confidence >= 80 ? 'bg-green-500' :
+                                          item.nn_depresi_confidence >= 60 ? 'bg-amber-400' : 'bg-red-400'
+                                        }`}
+                                        style={{ width: `${item.nn_depresi_confidence}%` }}
+                                      />
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <p className="text-[10px] text-slate-400 italic">Confidence tidak tersedia</p>
+                                )}
                               </div>
-                              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-1">
+
+                              {/* Kecemasan */}
+                              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-2">
                                 <div className="flex justify-between items-center">
                                   <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Kecemasan</span>
-                                  {item.nn_cemas_confidence !== undefined && item.nn_cemas_confidence > 0 && (
-                                    <span className="text-[10px] font-bold text-slate-500 bg-slate-200/60 px-2 py-0.5 rounded-full">
-                                      {item.nn_cemas_confidence}% Confidence
+                                  {item.nn_cemas_confidence != null && (
+                                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                      item.nn_cemas_confidence >= 80 ? 'bg-green-100 text-green-700' :
+                                      item.nn_cemas_confidence >= 60 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-600'
+                                    }`}>
+                                      {item.nn_cemas_confidence}%
                                     </span>
                                   )}
                                 </div>
                                 <p className="text-sm font-bold text-slate-800">{item.cemas_penyakit || 'Normal'}</p>
+                                {item.nn_cemas_confidence != null ? (
+                                  <div className="space-y-1">
+                                    <div className="flex items-center gap-1 text-[10px] text-slate-400 font-semibold">
+                                      <Brain className="w-3 h-3" /> Neural Network Confidence
+                                    </div>
+                                    <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                                      <div
+                                        className={`h-full rounded-full ${
+                                          item.nn_cemas_confidence >= 80 ? 'bg-green-500' :
+                                          item.nn_cemas_confidence >= 60 ? 'bg-amber-400' : 'bg-red-400'
+                                        }`}
+                                        style={{ width: `${item.nn_cemas_confidence}%` }}
+                                      />
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <p className="text-[10px] text-slate-400 italic">Confidence tidak tersedia</p>
+                                )}
                               </div>
                             </div>
                           )}
+
+                          {/* Status Konfirmasi */}
+                          <div className={`flex items-center gap-2.5 px-4 py-3 rounded-xl border ${
+                            item.reviewed_by_gurubk
+                              ? 'bg-green-50 border-green-200'
+                              : 'bg-amber-50 border-amber-200'
+                          }`}>
+                            {item.reviewed_by_gurubk ? (
+                              <>
+                                <BadgeCheck className="w-4 h-4 text-green-600 flex-shrink-0" />
+                                <div>
+                                  <p className="text-xs font-bold text-green-800">Diagnosis Dikonfirmasi oleh Guru BK</p>
+                                  <p className="text-[10px] text-green-600 mt-0.5">Hasil ini telah ditinjau dan disetujui</p>
+                                </div>
+                              </>
+                            ) : (
+                              <>
+                                <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0" />
+                                <div>
+                                  <p className="text-xs font-bold text-amber-800">Belum Dikonfirmasi</p>
+                                  <p className="text-[10px] text-amber-600 mt-0.5">Menunggu tinjauan Guru BK</p>
+                                </div>
+                              </>
+                            )}
+                          </div>
 
                           {/* Bagian Rekomendasi */}
                           {item.rekomendasi && (

@@ -16,6 +16,8 @@ import {
   Activity,
   RefreshCw,
   X,
+  Brain,
+  BadgeCheck,
 } from 'lucide-react';
 import Link from 'next/link';
 import { fetchApi } from '@/lib/api';
@@ -427,31 +429,95 @@ export default function GurubkStudentDetailPage() {
               <div>
                 <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Hasil Diagnosis</h4>
                 <div className="space-y-3">
-                  <div className="p-3 rounded-xl border border-slate-200 space-y-1">
+                  {/* Depresi */}
+                  <div className="p-4 rounded-xl border border-slate-200 space-y-2.5">
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-semibold text-slate-600">Depresi</span>
                       <span className="text-sm font-bold text-slate-900">{selectedTest.depresi_penyakit || 'Normal'}</span>
                     </div>
-                    {selectedTest.nn_depresi_confidence !== undefined && selectedTest.nn_depresi_confidence > 0 && (
-                      <div className="flex items-center justify-between text-xs text-slate-400">
-                        <span>Confidence Score</span>
-                        <span className="font-semibold text-slate-600">{selectedTest.nn_depresi_confidence}%</span>
+                    {selectedTest.nn_depresi_confidence != null ? (
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="flex items-center gap-1 text-slate-500 font-semibold">
+                            <Brain className="w-3 h-3" /> Neural Network Confidence
+                          </span>
+                          <span className={`font-black ${
+                            selectedTest.nn_depresi_confidence >= 80 ? 'text-green-600' :
+                            selectedTest.nn_depresi_confidence >= 60 ? 'text-amber-600' : 'text-red-500'
+                          }`}>{selectedTest.nn_depresi_confidence}%</span>
+                        </div>
+                        <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all ${
+                              selectedTest.nn_depresi_confidence >= 80 ? 'bg-green-500' :
+                              selectedTest.nn_depresi_confidence >= 60 ? 'bg-amber-400' : 'bg-red-400'
+                            }`}
+                            style={{ width: `${selectedTest.nn_depresi_confidence}%` }}
+                          />
+                        </div>
                       </div>
+                    ) : (
+                      <p className="text-xs text-slate-400 italic">Confidence tidak tersedia</p>
                     )}
                   </div>
-                  <div className="p-3 rounded-xl border border-slate-200 space-y-1">
+
+                  {/* Kecemasan */}
+                  <div className="p-4 rounded-xl border border-slate-200 space-y-2.5">
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-semibold text-slate-600">Kecemasan</span>
                       <span className="text-sm font-bold text-slate-900">{selectedTest.cemas_penyakit || 'Normal'}</span>
                     </div>
-                    {selectedTest.nn_cemas_confidence !== undefined && selectedTest.nn_cemas_confidence > 0 && (
-                      <div className="flex items-center justify-between text-xs text-slate-400">
-                        <span>Confidence Score</span>
-                        <span className="font-semibold text-slate-600">{selectedTest.nn_cemas_confidence}%</span>
+                    {selectedTest.nn_cemas_confidence != null ? (
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="flex items-center gap-1 text-slate-500 font-semibold">
+                            <Brain className="w-3 h-3" /> Neural Network Confidence
+                          </span>
+                          <span className={`font-black ${
+                            selectedTest.nn_cemas_confidence >= 80 ? 'text-green-600' :
+                            selectedTest.nn_cemas_confidence >= 60 ? 'text-amber-600' : 'text-red-500'
+                          }`}>{selectedTest.nn_cemas_confidence}%</span>
+                        </div>
+                        <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all ${
+                              selectedTest.nn_cemas_confidence >= 80 ? 'bg-green-500' :
+                              selectedTest.nn_cemas_confidence >= 60 ? 'bg-amber-400' : 'bg-red-400'
+                            }`}
+                            style={{ width: `${selectedTest.nn_cemas_confidence}%` }}
+                          />
+                        </div>
                       </div>
+                    ) : (
+                      <p className="text-xs text-slate-400 italic">Confidence tidak tersedia</p>
                     )}
                   </div>
                 </div>
+              </div>
+
+              {/* Status Konfirmasi */}
+              <div className={`flex items-center gap-3 p-4 rounded-xl border ${
+                selectedTest.reviewed_by_gurubk
+                  ? 'bg-green-50 border-green-200'
+                  : 'bg-amber-50 border-amber-200'
+              }`}>
+                {selectedTest.reviewed_by_gurubk ? (
+                  <>
+                    <BadgeCheck className="w-5 h-5 text-green-600 flex-shrink-0" />
+                    <div>
+                      <p className="text-sm font-bold text-green-800">Diagnosis Telah Dikonfirmasi</p>
+                      <p className="text-xs text-green-600 mt-0.5">Hasil ini sudah ditinjau oleh Guru BK</p>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0" />
+                    <div>
+                      <p className="text-sm font-bold text-amber-800">Belum Dikonfirmasi</p>
+                      <p className="text-xs text-amber-600 mt-0.5">Hasil ini belum ditinjau oleh Guru BK</p>
+                    </div>
+                  </>
+                )}
               </div>
 
               {/* Feedback Section */}
