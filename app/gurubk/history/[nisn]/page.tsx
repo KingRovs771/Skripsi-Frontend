@@ -42,6 +42,9 @@ interface TestResult {
   reviewed_by_gurubk: boolean;
   nn_depresi_confidence?: number;
   nn_cemas_confidence?: number;
+  // Status validasi per-diagnosis
+  is_depresi_validated?: boolean;
+  is_cemas_validated?: boolean;
 }
 
 interface StudentInfo {
@@ -435,6 +438,20 @@ export default function GurubkStudentDetailPage() {
                       <span className="text-sm font-semibold text-slate-600">Depresi</span>
                       <span className="text-sm font-bold text-slate-900">{selectedTest.depresi_penyakit || 'Normal'}</span>
                     </div>
+
+                    {/* Status Validasi Depresi */}
+                    <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold border ${
+                      selectedTest.is_depresi_validated
+                        ? 'bg-green-50 text-green-700 border-green-200'
+                        : 'bg-slate-100 text-slate-500 border-slate-200'
+                    }`}>
+                      {selectedTest.is_depresi_validated ? (
+                        <><BadgeCheck className="w-3.5 h-3.5" /> Tervalidasi</>
+                      ) : (
+                        <><XCircle className="w-3.5 h-3.5" /> Belum Divalidasi</>
+                      )}
+                    </div>
+
                     {selectedTest.nn_depresi_confidence != null ? (
                       <div className="space-y-1.5">
                         <div className="flex items-center justify-between text-xs">
@@ -467,6 +484,20 @@ export default function GurubkStudentDetailPage() {
                       <span className="text-sm font-semibold text-slate-600">Kecemasan</span>
                       <span className="text-sm font-bold text-slate-900">{selectedTest.cemas_penyakit || 'Normal'}</span>
                     </div>
+
+                    {/* Status Validasi Kecemasan */}
+                    <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold border ${
+                      selectedTest.is_cemas_validated
+                        ? 'bg-green-50 text-green-700 border-green-200'
+                        : 'bg-slate-100 text-slate-500 border-slate-200'
+                    }`}>
+                      {selectedTest.is_cemas_validated ? (
+                        <><BadgeCheck className="w-3.5 h-3.5" /> Tervalidasi</>
+                      ) : (
+                        <><XCircle className="w-3.5 h-3.5" /> Belum Divalidasi</>
+                      )}
+                    </div>
+
                     {selectedTest.nn_cemas_confidence != null ? (
                       <div className="space-y-1.5">
                         <div className="flex items-center justify-between text-xs">

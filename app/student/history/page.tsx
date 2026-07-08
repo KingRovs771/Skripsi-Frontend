@@ -30,6 +30,9 @@ interface MyTestHistory {
   cemas_penyakit?: string;
   nn_depresi_confidence?: number;
   nn_cemas_confidence?: number;
+  // Status validasi per-diagnosis
+  is_depresi_validated?: boolean;
+  is_cemas_validated?: boolean;
 }
 
 function getCategoryStyle(skor: number, kategori: string) {
@@ -164,6 +167,20 @@ export default function StudentHistoryPage() {
                                   )}
                                 </div>
                                 <p className="text-sm font-bold text-slate-800">{item.depresi_penyakit || 'Normal'}</p>
+
+                                {/* Status Validasi Depresi */}
+                                <div className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-md border ${
+                                  item.is_depresi_validated
+                                    ? 'bg-green-50 text-green-700 border-green-200'
+                                    : 'bg-slate-100 text-slate-500 border-slate-200'
+                                }`}>
+                                  {item.is_depresi_validated ? (
+                                    <><BadgeCheck className="w-3 h-3" /> Tervalidasi</>
+                                  ) : (
+                                    <><AlertTriangle className="w-3 h-3" /> Belum Divalidasi</>
+                                  )}
+                                </div>
+
                                 {item.nn_depresi_confidence != null ? (
                                   <div className="space-y-1">
                                     <div className="flex items-center gap-1 text-[10px] text-slate-400 font-semibold">
@@ -198,6 +215,20 @@ export default function StudentHistoryPage() {
                                   )}
                                 </div>
                                 <p className="text-sm font-bold text-slate-800">{item.cemas_penyakit || 'Normal'}</p>
+
+                                {/* Status Validasi Kecemasan */}
+                                <div className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-md border ${
+                                  item.is_cemas_validated
+                                    ? 'bg-green-50 text-green-700 border-green-200'
+                                    : 'bg-slate-100 text-slate-500 border-slate-200'
+                                }`}>
+                                  {item.is_cemas_validated ? (
+                                    <><BadgeCheck className="w-3 h-3" /> Tervalidasi</>
+                                  ) : (
+                                    <><AlertTriangle className="w-3 h-3" /> Belum Divalidasi</>
+                                  )}
+                                </div>
+
                                 {item.nn_cemas_confidence != null ? (
                                   <div className="space-y-1">
                                     <div className="flex items-center gap-1 text-[10px] text-slate-400 font-semibold">
