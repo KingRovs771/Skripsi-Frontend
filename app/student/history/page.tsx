@@ -159,10 +159,10 @@ export default function StudentHistoryPage() {
                                   <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Depresi</span>
                                   {item.nn_depresi_confidence != null && (
                                     <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                                      item.nn_depresi_confidence >= 80 ? 'bg-green-100 text-green-700' :
-                                      item.nn_depresi_confidence >= 60 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-600'
+                                      (item.nn_depresi_confidence * 100) >= 80 ? 'bg-green-100 text-green-700' :
+                                      (item.nn_depresi_confidence * 100) >= 60 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-600'
                                     }`}>
-                                      {item.nn_depresi_confidence}%
+                                      {Math.round(item.nn_depresi_confidence * 100)}%
                                     </span>
                                   )}
                                 </div>
@@ -189,10 +189,10 @@ export default function StudentHistoryPage() {
                                     <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
                                       <div
                                         className={`h-full rounded-full ${
-                                          item.nn_depresi_confidence >= 80 ? 'bg-green-500' :
-                                          item.nn_depresi_confidence >= 60 ? 'bg-amber-400' : 'bg-red-400'
+                                          (item.nn_depresi_confidence * 100) >= 80 ? 'bg-green-500' :
+                                          (item.nn_depresi_confidence * 100) >= 60 ? 'bg-amber-400' : 'bg-red-400'
                                         }`}
-                                        style={{ width: `${item.nn_depresi_confidence}%` }}
+                                        style={{ width: `${Math.round(item.nn_depresi_confidence * 100)}%` }}
                                       />
                                     </div>
                                   </div>
@@ -207,10 +207,10 @@ export default function StudentHistoryPage() {
                                   <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Kecemasan</span>
                                   {item.nn_cemas_confidence != null && (
                                     <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                                      item.nn_cemas_confidence >= 80 ? 'bg-green-100 text-green-700' :
-                                      item.nn_cemas_confidence >= 60 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-600'
+                                      (item.nn_cemas_confidence * 100) >= 80 ? 'bg-green-100 text-green-700' :
+                                      (item.nn_cemas_confidence * 100) >= 60 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-600'
                                     }`}>
-                                      {item.nn_cemas_confidence}%
+                                      {Math.round(item.nn_cemas_confidence * 100)}%
                                     </span>
                                   )}
                                 </div>
@@ -237,10 +237,10 @@ export default function StudentHistoryPage() {
                                     <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
                                       <div
                                         className={`h-full rounded-full ${
-                                          item.nn_cemas_confidence >= 80 ? 'bg-green-500' :
-                                          item.nn_cemas_confidence >= 60 ? 'bg-amber-400' : 'bg-red-400'
+                                          (item.nn_cemas_confidence * 100) >= 80 ? 'bg-green-500' :
+                                          (item.nn_cemas_confidence * 100) >= 60 ? 'bg-amber-400' : 'bg-red-400'
                                         }`}
-                                        style={{ width: `${item.nn_cemas_confidence}%` }}
+                                        style={{ width: `${Math.round(item.nn_cemas_confidence * 100)}%` }}
                                       />
                                     </div>
                                   </div>

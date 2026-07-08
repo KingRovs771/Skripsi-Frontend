@@ -459,17 +459,17 @@ export default function GurubkStudentDetailPage() {
                             <Brain className="w-3 h-3" /> Neural Network Confidence
                           </span>
                           <span className={`font-black ${
-                            selectedTest.nn_depresi_confidence >= 80 ? 'text-green-600' :
-                            selectedTest.nn_depresi_confidence >= 60 ? 'text-amber-600' : 'text-red-500'
-                          }`}>{selectedTest.nn_depresi_confidence}%</span>
+                            (selectedTest.nn_depresi_confidence * 100) >= 80 ? 'text-green-600' :
+                            (selectedTest.nn_depresi_confidence * 100) >= 60 ? 'text-amber-600' : 'text-red-500'
+                          }`}>{Math.round(selectedTest.nn_depresi_confidence * 100)}%</span>
                         </div>
                         <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
                           <div
                             className={`h-full rounded-full transition-all ${
-                              selectedTest.nn_depresi_confidence >= 80 ? 'bg-green-500' :
-                              selectedTest.nn_depresi_confidence >= 60 ? 'bg-amber-400' : 'bg-red-400'
+                              (selectedTest.nn_depresi_confidence * 100) >= 80 ? 'bg-green-500' :
+                              (selectedTest.nn_depresi_confidence * 100) >= 60 ? 'bg-amber-400' : 'bg-red-400'
                             }`}
-                            style={{ width: `${selectedTest.nn_depresi_confidence}%` }}
+                            style={{ width: `${Math.round(selectedTest.nn_depresi_confidence * 100)}%` }}
                           />
                         </div>
                       </div>
@@ -505,17 +505,17 @@ export default function GurubkStudentDetailPage() {
                             <Brain className="w-3 h-3" /> Neural Network Confidence
                           </span>
                           <span className={`font-black ${
-                            selectedTest.nn_cemas_confidence >= 80 ? 'text-green-600' :
-                            selectedTest.nn_cemas_confidence >= 60 ? 'text-amber-600' : 'text-red-500'
-                          }`}>{selectedTest.nn_cemas_confidence}%</span>
+                            (selectedTest.nn_cemas_confidence * 100) >= 80 ? 'text-green-600' :
+                            (selectedTest.nn_cemas_confidence * 100) >= 60 ? 'text-amber-600' : 'text-red-500'
+                          }`}>{Math.round(selectedTest.nn_cemas_confidence * 100)}%</span>
                         </div>
                         <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
                           <div
                             className={`h-full rounded-full transition-all ${
-                              selectedTest.nn_cemas_confidence >= 80 ? 'bg-green-500' :
-                              selectedTest.nn_cemas_confidence >= 60 ? 'bg-amber-400' : 'bg-red-400'
+                              (selectedTest.nn_cemas_confidence * 100) >= 80 ? 'bg-green-500' :
+                              (selectedTest.nn_cemas_confidence * 100) >= 60 ? 'bg-amber-400' : 'bg-red-400'
                             }`}
-                            style={{ width: `${selectedTest.nn_cemas_confidence}%` }}
+                            style={{ width: `${Math.round(selectedTest.nn_cemas_confidence * 100)}%` }}
                           />
                         </div>
                       </div>
