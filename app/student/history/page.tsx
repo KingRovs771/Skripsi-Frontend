@@ -30,13 +30,14 @@ interface MyTestHistory {
   cemas_penyakit?: string;
   nn_depresi_confidence?: number;
   nn_cemas_confidence?: number;
-  // Status validasi per-diagnosis
+  // Status validasi per-diagnosis (CONFIRMED, ADJUSTED, URGENT_INTERVENTION)
   is_depresi_validated?: boolean;
   is_cemas_validated?: boolean;
+  status_validasi_depresi?: 'CONFIRMED' | 'ADJUSTED' | 'URGENT_INTERVENTION' | string;
+  status_validasi_kecemasan?: 'CONFIRMED' | 'ADJUSTED' | 'URGENT_INTERVENTION' | string;
+  status_validasi_cemas?: 'CONFIRMED' | 'ADJUSTED' | 'URGENT_INTERVENTION' | string;
   depresi_status_validasi?: string;
   cemas_status_validasi?: string;
-  status_validasi_depresi?: string;
-  status_validasi_cemas?: string;
 }
 
 function getCategoryStyle(skor: number, kategori: string) {
@@ -57,6 +58,60 @@ function getCategoryStyle(skor: number, kategori: string) {
     bar: 'bg-green-400',
     badge: 'bg-green-50 text-green-700 border-green-200',
   };
+}
+
+function getValidationStatusConfig(status?: string | boolean) {
+  if (status === undefined || status === null || status === false) {
+    return {
+      label: 'Belum Divalidasi',
+      badge: 'bg-slate-100 text-slate-500 border-slate-200',
+      icon: <AlertTriangle className="w-3 h-3 text-slate-400" />,
+    };
+  }
+
+  if (typeof status === 'boolean') {
+    return status
+      ? {
+          label: 'CONFIRMED',
+          badge: 'bg-green-50 text-green-700 border-green-200',
+          icon: <BadgeCheck className="w-3 h-3 text-green-600" />,
+        }
+      : {
+          label: 'Belum Divalidasi',
+          badge: 'bg-slate-100 text-slate-500 border-slate-200',
+          icon: <AlertTriangle className="w-3 h-3 text-slate-400" />,
+        };
+  }
+
+  const normalized = String(status).trim().toUpperCase();
+
+  switch (normalized) {
+    case 'CONFIRMED':
+      return {
+        label: 'CONFIRMED',
+        badge: 'bg-green-50 text-green-700 border-green-200',
+        icon: <BadgeCheck className="w-3 h-3 text-green-600" />,
+      };
+    case 'ADJUSTED':
+      return {
+        label: 'ADJUSTED',
+        badge: 'bg-blue-50 text-blue-700 border-blue-200',
+        icon: <BadgeCheck className="w-3 h-3 text-blue-600" />,
+      };
+    case 'URGENT_INTERVENTION':
+    case 'URGENT':
+      return {
+        label: 'URGENT INTERVENTION',
+        badge: 'bg-red-50 text-red-700 border-red-200 font-bold animate-pulse',
+        icon: <AlertTriangle className="w-3 h-3 text-red-600" />,
+      };
+    default:
+      return {
+        label: String(status),
+        badge: 'bg-slate-100 text-slate-700 border-slate-200',
+        icon: <BadgeCheck className="w-3 h-3 text-slate-500" />,
+      };
+  }
 }
 
 export default function StudentHistoryPage() {
@@ -173,20 +228,20 @@ export default function StudentHistoryPage() {
                                 <p className="text-sm font-bold text-slate-800">{item.depresi_penyakit || 'Normal'}</p>
 
                                 {/* Status Validasi Depresi */}
-                                <div className="flex items-center justify-between text-[11px] pt-1">
-                                  <span className="font-semibold text-slate-500">Status Validasi:</span>
-                                  <div className={`inline-flex items-center gap-1 font-bold px-2 py-0.5 rounded-md border ${
-                                    item.is_depresi_validated || item.depresi_status_validasi === 'Valid' || item.depresi_status_validasi === 'Tervalidasi'
-                                      ? 'bg-green-50 text-green-700 border-green-200'
-                                      : 'bg-amber-50 text-amber-700 border-amber-200'
-                                  }`}>
-                                    {item.is_depresi_validated || item.depresi_status_validasi === 'Valid' || item.depresi_status_validasi === 'Tervalidasi' ? (
-                                      <><BadgeCheck className="w-3 h-3 text-green-600" /> {item.depresi_status_validasi || item.status_validasi_depresi || 'Tervalidasi'}</>
-                                    ) : (
-                                      <><AlertTriangle className="w-3 h-3 text-amber-500" /> {item.depresi_status_validasi || item.status_validasi_depresi || 'Belum Divalidasi'}</>
-                                    )}
-                                  </div>
-                                </div>
+                                {(() => {
+                                  const valConfig = getValidationStatusConfig(
+                                    item.status_validasi_depresi ?? item.depresi_status_validasi ?? item.is_depresi_validated
+                                  );
+                                  return (
+                                    <div className="flex items-center justify-between text-[11px] pt-1">
+                                      <span className="font-semibold text-slate-500">Status Validasi:</span>
+                                      <div className={`inline-flex items-center gap-1 font-bold px-2 py-0.5 rounded-md border ${valConfig.badge}`}>
+                                        {valConfig.icon}
+                                        {valConfig.label}
+                                      </div>
+                                    </div>
+                                  );
+                                })()}
 
                                 {item.nn_depresi_confidence != null ? (
                                   <div className="space-y-1">
@@ -224,20 +279,20 @@ export default function StudentHistoryPage() {
                                 <p className="text-sm font-bold text-slate-800">{item.cemas_penyakit || 'Normal'}</p>
 
                                 {/* Status Validasi Kecemasan */}
-                                <div className="flex items-center justify-between text-[11px] pt-1">
-                                  <span className="font-semibold text-slate-500">Status Validasi:</span>
-                                  <div className={`inline-flex items-center gap-1 font-bold px-2 py-0.5 rounded-md border ${
-                                    item.is_cemas_validated || item.cemas_status_validasi === 'Valid' || item.cemas_status_validasi === 'Tervalidasi'
-                                      ? 'bg-green-50 text-green-700 border-green-200'
-                                      : 'bg-amber-50 text-amber-700 border-amber-200'
-                                  }`}>
-                                    {item.is_cemas_validated || item.cemas_status_validasi === 'Valid' || item.cemas_status_validasi === 'Tervalidasi' ? (
-                                      <><BadgeCheck className="w-3 h-3 text-green-600" /> {item.cemas_status_validasi || item.status_validasi_cemas || 'Tervalidasi'}</>
-                                    ) : (
-                                      <><AlertTriangle className="w-3 h-3 text-amber-500" /> {item.cemas_status_validasi || item.status_validasi_cemas || 'Belum Divalidasi'}</>
-                                    )}
-                                  </div>
-                                </div>
+                                {(() => {
+                                  const valConfig = getValidationStatusConfig(
+                                    item.status_validasi_kecemasan ?? item.status_validasi_cemas ?? item.cemas_status_validasi ?? item.is_cemas_validated
+                                  );
+                                  return (
+                                    <div className="flex items-center justify-between text-[11px] pt-1">
+                                      <span className="font-semibold text-slate-500">Status Validasi:</span>
+                                      <div className={`inline-flex items-center gap-1 font-bold px-2 py-0.5 rounded-md border ${valConfig.badge}`}>
+                                        {valConfig.icon}
+                                        {valConfig.label}
+                                      </div>
+                                    </div>
+                                  );
+                                })()}
 
                                 {item.nn_cemas_confidence != null ? (
                                   <div className="space-y-1">
