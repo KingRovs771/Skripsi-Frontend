@@ -45,6 +45,10 @@ interface TestResult {
   // Status validasi per-diagnosis
   is_depresi_validated?: boolean;
   is_cemas_validated?: boolean;
+  depresi_status_validasi?: string;
+  cemas_status_validasi?: string;
+  status_validasi_depresi?: string;
+  status_validasi_cemas?: string;
 }
 
 interface StudentInfo {
@@ -305,7 +309,7 @@ export default function GurubkStudentDetailPage() {
                             </div>
                           </div>
 
-                          <div className="mt-2">
+                          <div className="mt-2 flex flex-wrap items-center gap-2">
                             <button
                               onClick={() => setSelectedTest(test)}
                               className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold rounded-xl transition-colors inline-flex items-center gap-2"
@@ -313,6 +317,38 @@ export default function GurubkStudentDetailPage() {
                               <Eye className="w-4 h-4" />
                               Lihat Detail Diagnosis
                             </button>
+                          </div>
+
+                          {/* Ringkasan Status Validasi Penyakit */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-3 pt-3 border-t border-slate-100">
+                            <div className="flex items-center justify-between text-xs bg-slate-50 px-3 py-2 rounded-xl border border-slate-100">
+                              <span className="text-slate-500 font-medium">Depresi: <strong className="text-slate-800">{test.depresi_penyakit || 'Normal'}</strong></span>
+                              <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold border flex items-center gap-1 ${
+                                test.is_depresi_validated || test.depresi_status_validasi === 'Valid' || test.depresi_status_validasi === 'Tervalidasi'
+                                  ? 'bg-green-50 text-green-700 border-green-200'
+                                  : 'bg-amber-50 text-amber-700 border-amber-200'
+                              }`}>
+                                {test.is_depresi_validated || test.depresi_status_validasi === 'Valid' || test.depresi_status_validasi === 'Tervalidasi' ? (
+                                  <><BadgeCheck className="w-3 h-3" /> {test.depresi_status_validasi || test.status_validasi_depresi || 'Tervalidasi'}</>
+                                ) : (
+                                  <><AlertTriangle className="w-3 h-3 text-amber-500" /> {test.depresi_status_validasi || test.status_validasi_depresi || 'Belum Divalidasi'}</>
+                                )}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between text-xs bg-slate-50 px-3 py-2 rounded-xl border border-slate-100">
+                              <span className="text-slate-500 font-medium">Kecemasan: <strong className="text-slate-800">{test.cemas_penyakit || 'Normal'}</strong></span>
+                              <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold border flex items-center gap-1 ${
+                                test.is_cemas_validated || test.cemas_status_validasi === 'Valid' || test.cemas_status_validasi === 'Tervalidasi'
+                                  ? 'bg-green-50 text-green-700 border-green-200'
+                                  : 'bg-amber-50 text-amber-700 border-amber-200'
+                              }`}>
+                                {test.is_cemas_validated || test.cemas_status_validasi === 'Valid' || test.cemas_status_validasi === 'Tervalidasi' ? (
+                                  <><BadgeCheck className="w-3 h-3" /> {test.cemas_status_validasi || test.status_validasi_cemas || 'Tervalidasi'}</>
+                                ) : (
+                                  <><AlertTriangle className="w-3 h-3 text-amber-500" /> {test.cemas_status_validasi || test.status_validasi_cemas || 'Belum Divalidasi'}</>
+                                )}
+                              </span>
+                            </div>
                           </div>
                         </div>
 
@@ -440,16 +476,19 @@ export default function GurubkStudentDetailPage() {
                     </div>
 
                     {/* Status Validasi Depresi */}
-                    <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold border ${
-                      selectedTest.is_depresi_validated
-                        ? 'bg-green-50 text-green-700 border-green-200'
-                        : 'bg-slate-100 text-slate-500 border-slate-200'
-                    }`}>
-                      {selectedTest.is_depresi_validated ? (
-                        <><BadgeCheck className="w-3.5 h-3.5" /> Tervalidasi</>
-                      ) : (
-                        <><XCircle className="w-3.5 h-3.5" /> Belum Divalidasi</>
-                      )}
+                    <div className="flex items-center justify-between pt-1 pb-1 border-t border-slate-100 mt-2">
+                      <span className="text-xs text-slate-500 font-semibold">Status Validasi</span>
+                      <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold border ${
+                        selectedTest.is_depresi_validated || selectedTest.depresi_status_validasi === 'Valid' || selectedTest.depresi_status_validasi === 'Tervalidasi'
+                          ? 'bg-green-50 text-green-700 border-green-200'
+                          : 'bg-amber-50 text-amber-700 border-amber-200'
+                      }`}>
+                        {selectedTest.is_depresi_validated || selectedTest.depresi_status_validasi === 'Valid' || selectedTest.depresi_status_validasi === 'Tervalidasi' ? (
+                          <><BadgeCheck className="w-3.5 h-3.5 text-green-600" /> {selectedTest.depresi_status_validasi || selectedTest.status_validasi_depresi || 'Tervalidasi'}</>
+                        ) : (
+                          <><AlertTriangle className="w-3.5 h-3.5 text-amber-500" /> {selectedTest.depresi_status_validasi || selectedTest.status_validasi_depresi || 'Belum Divalidasi'}</>
+                        )}
+                      </div>
                     </div>
 
                     {selectedTest.nn_depresi_confidence != null ? (
@@ -486,16 +525,19 @@ export default function GurubkStudentDetailPage() {
                     </div>
 
                     {/* Status Validasi Kecemasan */}
-                    <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold border ${
-                      selectedTest.is_cemas_validated
-                        ? 'bg-green-50 text-green-700 border-green-200'
-                        : 'bg-slate-100 text-slate-500 border-slate-200'
-                    }`}>
-                      {selectedTest.is_cemas_validated ? (
-                        <><BadgeCheck className="w-3.5 h-3.5" /> Tervalidasi</>
-                      ) : (
-                        <><XCircle className="w-3.5 h-3.5" /> Belum Divalidasi</>
-                      )}
+                    <div className="flex items-center justify-between pt-1 pb-1 border-t border-slate-100 mt-2">
+                      <span className="text-xs text-slate-500 font-semibold">Status Validasi</span>
+                      <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold border ${
+                        selectedTest.is_cemas_validated || selectedTest.cemas_status_validasi === 'Valid' || selectedTest.cemas_status_validasi === 'Tervalidasi'
+                          ? 'bg-green-50 text-green-700 border-green-200'
+                          : 'bg-amber-50 text-amber-700 border-amber-200'
+                      }`}>
+                        {selectedTest.is_cemas_validated || selectedTest.cemas_status_validasi === 'Valid' || selectedTest.cemas_status_validasi === 'Tervalidasi' ? (
+                          <><BadgeCheck className="w-3.5 h-3.5 text-green-600" /> {selectedTest.cemas_status_validasi || selectedTest.status_validasi_cemas || 'Tervalidasi'}</>
+                        ) : (
+                          <><AlertTriangle className="w-3.5 h-3.5 text-amber-500" /> {selectedTest.cemas_status_validasi || selectedTest.status_validasi_cemas || 'Belum Divalidasi'}</>
+                        )}
+                      </div>
                     </div>
 
                     {selectedTest.nn_cemas_confidence != null ? (

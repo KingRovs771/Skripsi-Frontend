@@ -33,6 +33,10 @@ interface MyTestHistory {
   // Status validasi per-diagnosis
   is_depresi_validated?: boolean;
   is_cemas_validated?: boolean;
+  depresi_status_validasi?: string;
+  cemas_status_validasi?: string;
+  status_validasi_depresi?: string;
+  status_validasi_cemas?: string;
 }
 
 function getCategoryStyle(skor: number, kategori: string) {
@@ -169,16 +173,19 @@ export default function StudentHistoryPage() {
                                 <p className="text-sm font-bold text-slate-800">{item.depresi_penyakit || 'Normal'}</p>
 
                                 {/* Status Validasi Depresi */}
-                                <div className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-md border ${
-                                  item.is_depresi_validated
-                                    ? 'bg-green-50 text-green-700 border-green-200'
-                                    : 'bg-slate-100 text-slate-500 border-slate-200'
-                                }`}>
-                                  {item.is_depresi_validated ? (
-                                    <><BadgeCheck className="w-3 h-3" /> Tervalidasi</>
-                                  ) : (
-                                    <><AlertTriangle className="w-3 h-3" /> Belum Divalidasi</>
-                                  )}
+                                <div className="flex items-center justify-between text-[11px] pt-1">
+                                  <span className="font-semibold text-slate-500">Status Validasi:</span>
+                                  <div className={`inline-flex items-center gap-1 font-bold px-2 py-0.5 rounded-md border ${
+                                    item.is_depresi_validated || item.depresi_status_validasi === 'Valid' || item.depresi_status_validasi === 'Tervalidasi'
+                                      ? 'bg-green-50 text-green-700 border-green-200'
+                                      : 'bg-amber-50 text-amber-700 border-amber-200'
+                                  }`}>
+                                    {item.is_depresi_validated || item.depresi_status_validasi === 'Valid' || item.depresi_status_validasi === 'Tervalidasi' ? (
+                                      <><BadgeCheck className="w-3 h-3 text-green-600" /> {item.depresi_status_validasi || item.status_validasi_depresi || 'Tervalidasi'}</>
+                                    ) : (
+                                      <><AlertTriangle className="w-3 h-3 text-amber-500" /> {item.depresi_status_validasi || item.status_validasi_depresi || 'Belum Divalidasi'}</>
+                                    )}
+                                  </div>
                                 </div>
 
                                 {item.nn_depresi_confidence != null ? (
@@ -217,16 +224,19 @@ export default function StudentHistoryPage() {
                                 <p className="text-sm font-bold text-slate-800">{item.cemas_penyakit || 'Normal'}</p>
 
                                 {/* Status Validasi Kecemasan */}
-                                <div className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-md border ${
-                                  item.is_cemas_validated
-                                    ? 'bg-green-50 text-green-700 border-green-200'
-                                    : 'bg-slate-100 text-slate-500 border-slate-200'
-                                }`}>
-                                  {item.is_cemas_validated ? (
-                                    <><BadgeCheck className="w-3 h-3" /> Tervalidasi</>
-                                  ) : (
-                                    <><AlertTriangle className="w-3 h-3" /> Belum Divalidasi</>
-                                  )}
+                                <div className="flex items-center justify-between text-[11px] pt-1">
+                                  <span className="font-semibold text-slate-500">Status Validasi:</span>
+                                  <div className={`inline-flex items-center gap-1 font-bold px-2 py-0.5 rounded-md border ${
+                                    item.is_cemas_validated || item.cemas_status_validasi === 'Valid' || item.cemas_status_validasi === 'Tervalidasi'
+                                      ? 'bg-green-50 text-green-700 border-green-200'
+                                      : 'bg-amber-50 text-amber-700 border-amber-200'
+                                  }`}>
+                                    {item.is_cemas_validated || item.cemas_status_validasi === 'Valid' || item.cemas_status_validasi === 'Tervalidasi' ? (
+                                      <><BadgeCheck className="w-3 h-3 text-green-600" /> {item.cemas_status_validasi || item.status_validasi_cemas || 'Tervalidasi'}</>
+                                    ) : (
+                                      <><AlertTriangle className="w-3 h-3 text-amber-500" /> {item.cemas_status_validasi || item.status_validasi_cemas || 'Belum Divalidasi'}</>
+                                    )}
+                                  </div>
                                 </div>
 
                                 {item.nn_cemas_confidence != null ? (
