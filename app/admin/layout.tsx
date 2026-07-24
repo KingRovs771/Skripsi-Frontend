@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, Newspaper, FileText, Users, LogOut, School, ShieldCheck, ChevronRight, ChevronDown, Menu, X } from 'lucide-react';
+import { LayoutDashboard, Newspaper, FileText, Users, LogOut, School, ShieldCheck, ChevronRight, ChevronDown, Menu, X, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { fetchApi } from '@/lib/api';
 import { toast } from 'sonner';
@@ -22,6 +22,7 @@ function AdminSidebar({ isOpen, setIsOpen }: SidebarProps) {
     { href: '/admin/sekolah', icon: School, label: 'Manajemen Sekolah' },
     { href: '/admin/article', icon: Newspaper, label: 'Manajemen Artikel' },
     { href: '/admin/tes', icon: FileText, label: 'Monitoring Tes' },
+    { href: '/admin/monitoring', icon: BarChart3, label: 'Monitoring Sekolah' },
   ];
 
   const userSubItems = [

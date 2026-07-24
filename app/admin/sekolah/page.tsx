@@ -1,7 +1,8 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { School, PlusCircle, Search, Pencil, Trash2, ArrowLeft, Save, Loader2, MapPin, Hash, GraduationCap } from 'lucide-react';
+import { School, PlusCircle, Search, Pencil, Trash2, ArrowLeft, Save, Loader2, MapPin, Hash, GraduationCap, UserCheck, X, ChevronDown } from 'lucide-react';
 import { fetchApi } from '@/lib/api';
+import { toast } from 'sonner';
 
 interface SchoolData {
   sekolah_id: number;
@@ -12,6 +13,132 @@ interface SchoolData {
   alamat_sekolah: string;
   created_at: string;
   update_at: string;
+  // Pakar yang diberi tanggung jawab (null jika belum ditugaskan)
+  pakar_uid?: string | null;
+  pakar_nama?: string | null;
+}
+
+interface PakarOption {
+  pakar_uid: string;
+  user_uid?: string;
+  nama_lengkap: string;
+  spesialisasi?: string;
+  jenis_spesialis?: string;
+}
+
+// ─── Modal Assign Pakar ──────────────────────────────────────────────────────
+
+function PakarAssignModal({
+  school,
+  pakars,
+  onClose,
+  onSaved,
+}: {
+  school: SchoolData;
+  pakars: PakarOption[];
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [selectedPakarUid, setSelectedPakarUid] = useState<string>(
+    school.pakar_uid ?? ''
+  );
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const res = await fetchApi(`/api/admin/sekolah/${school.sekolah_uid}/assign-pakar`, {
+        method: 'PUT',
+        body: JSON.stringify({ pakar_uid: selectedPakarUid || null }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (res.ok) {
+        toast.success(`Pakar berhasil ditugaskan ke ${school.nama_sekolah}`);
+        onSaved();
+        onClose();
+      } else {
+        toast.error(json.Message || json.message || 'Gagal menyimpan penugasan');
+      }
+    } catch {
+      toast.error('Gagal terhubung ke server');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+        {/* Header */}
+        <div className="bg-slate-900 px-6 py-5 flex items-start justify-between">
+          <div>
+            <h2 className="font-black text-white text-lg">Tugaskan Pakar</h2>
+            <p className="text-slate-400 text-sm mt-0.5">{school.nama_sekolah}</p>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition-colors mt-1"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="p-6 space-y-4">
+          <div className="space-y-2">
+            <label className="text-xs font-black text-slate-400 uppercase tracking-widest">
+              Pilih Pakar Penanggung Jawab
+            </label>
+            <div className="relative">
+              <select
+                value={selectedPakarUid}
+                onChange={(e) => setSelectedPakarUid(e.target.value)}
+                className="w-full p-3.5 pr-10 bg-slate-50 border-2 border-slate-100 rounded-2xl appearance-none focus:outline-none focus:border-slate-900 transition-all font-medium text-slate-900"
+              >
+                <option value="">— Tidak Ada (Lepas Penugasan) —</option>
+                {pakars.map((p) => (
+                  <option
+                    key={p.pakar_uid || p.user_uid}
+                    value={p.pakar_uid || p.user_uid || ''}
+                  >
+                    {p.nama_lengkap}
+                    {(p.spesialisasi || p.jenis_spesialis)
+                      ? ` — ${p.spesialisasi || p.jenis_spesialis}`
+                      : ''}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+            </div>
+          </div>
+
+          {school.pakar_nama && (
+            <p className="text-xs text-slate-500">
+              Saat ini ditugaskan ke:{' '}
+              <strong className="text-slate-900">{school.pakar_nama}</strong>
+            </p>
+          )}
+
+          <div className="flex gap-3 pt-2">
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="flex-1 flex justify-center items-center gap-2 bg-slate-900 text-white py-3.5 rounded-2xl font-black hover:bg-slate-800 transition-all active:scale-[0.98]"
+            >
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              Simpan Penugasan
+            </button>
+            <button
+              onClick={onClose}
+              className="flex-1 bg-white border-2 border-slate-200 text-slate-500 py-3.5 rounded-2xl font-black hover:bg-slate-50 transition-all"
+            >
+              Batal
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default function ManajemenSekolahPage() {
@@ -21,6 +148,11 @@ export default function ManajemenSekolahPage() {
   const [schools, setSchools] = useState<SchoolData[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+
+  // State untuk modal assign pakar
+  const [assignTarget, setAssignTarget] = useState<SchoolData | null>(null);
+  const [pakars, setPakars] = useState<PakarOption[]>([]);
+  const [pakarsLoading, setPakarsLoading] = useState(false);
 
   // State Form
   const [formData, setFormData] = useState({
@@ -32,7 +164,23 @@ export default function ManajemenSekolahPage() {
 
   useEffect(() => {
     fetchSchools();
+    fetchPakars();
   }, []);
+
+  const fetchPakars = async () => {
+    setPakarsLoading(true);
+    try {
+      const res  = await fetchApi('/api/admin/users/pakars', { method: 'GET' });
+      const json = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setPakars(json.Data || json.data || []);
+      }
+    } catch {
+      console.warn('Gagal memuat daftar pakar');
+    } finally {
+      setPakarsLoading(false);
+    }
+  };
 
   const fetchSchools = async () => {
     setLoading(true);
@@ -219,6 +367,7 @@ export default function ManajemenSekolahPage() {
                   <th className="p-5 font-black text-slate-700 text-xs uppercase tracking-widest">Nama Sekolah</th>
                   <th className="p-5 font-black text-slate-700 text-xs uppercase tracking-widest">Jenjang</th>
                   <th className="p-5 font-black text-slate-700 text-xs uppercase tracking-widest">Alamat</th>
+                  <th className="p-5 font-black text-slate-700 text-xs uppercase tracking-widest">Pakar Binaan</th>
                   <th className="p-5 font-black text-slate-700 text-xs uppercase tracking-widest text-right">Aksi</th>
                 </tr>
               </thead>
@@ -245,13 +394,35 @@ export default function ManajemenSekolahPage() {
                         <span className="px-3 py-1 bg-slate-900 text-white text-[10px] font-black rounded-lg uppercase tracking-wider">{school.jenjang}</span>
                       </td>
                       <td className="p-5 text-sm text-slate-500 max-w-xs truncate">{school.alamat_sekolah}</td>
-                      <td className="p-5 text-right space-x-2">
-                        <button onClick={() => handleEditMode(school)} className="p-2 text-slate-400 hover:text-slate-900 transition-colors">
-                          <Pencil className="w-4 h-4" />
-                        </button>
-                        <button onClick={() => handleDelete(school.sekolah_uid)} className="p-2 text-red-400 hover:text-red-600 transition-colors">
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                      {/* Kolom Pakar Binaan */}
+                      <td className="p-5">
+                        {school.pakar_nama ? (
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
+                              <UserCheck className="w-3 h-3 text-blue-600" />
+                            </div>
+                            <span className="text-sm font-medium text-slate-700">{school.pakar_nama}</span>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-slate-300 font-medium italic">Belum ditugaskan</span>
+                        )}
+                      </td>
+                      <td className="p-5 text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            onClick={() => setAssignTarget(school)}
+                            title="Tugaskan Pakar"
+                            className="p-2 text-blue-400 hover:text-blue-600 transition-colors rounded-lg hover:bg-blue-50"
+                          >
+                            <UserCheck className="w-4 h-4" />
+                          </button>
+                          <button onClick={() => handleEditMode(school)} className="p-2 text-slate-400 hover:text-slate-900 transition-colors rounded-lg hover:bg-slate-50">
+                            <Pencil className="w-4 h-4" />
+                          </button>
+                          <button onClick={() => handleDelete(school.sekolah_uid)} className="p-2 text-red-400 hover:text-red-600 transition-colors rounded-lg hover:bg-red-50">
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -359,6 +530,16 @@ export default function ManajemenSekolahPage() {
             </form>
           </div>
         </div>
+      )}
+
+      {/* Modal Assign Pakar */}
+      {assignTarget && (
+        <PakarAssignModal
+          school={assignTarget}
+          pakars={pakars}
+          onClose={() => setAssignTarget(null)}
+          onSaved={fetchSchools}
+        />
       )}
     </div>
   );

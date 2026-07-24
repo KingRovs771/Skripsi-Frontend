@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { ChevronRight, ChevronLeft, Loader2, Brain, CheckCircle2, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
@@ -35,6 +35,20 @@ export default function DiagnosisQuizPage() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [ceritaSiswa, setCeritaSiswa] = useState<string>('');
+
+  // Penghitung kata real-time — logika identik dengan backend Golang:
+  // strings.Fields(strings.TrimSpace(ceritaSiswa)) = split by whitespace, filter empty
+  const MIN_WORDS   = 30;
+  const wordCount   = useMemo(
+    () =>
+      ceritaSiswa.trim() === ''
+        ? 0
+        : ceritaSiswa.trim().split(/\s+/).filter(Boolean).length,
+    [ceritaSiswa],
+  );
+  const isReady     = wordCount >= MIN_WORDS;
+  const wordsLeft   = Math.max(0, MIN_WORDS - wordCount);
+  const progressPct = Math.min(100, Math.round((wordCount / MIN_WORDS) * 100));
 
   useEffect(() => {
     // Baca session_uid yang disimpan saat startTes di halaman intro
@@ -160,21 +174,65 @@ export default function DiagnosisQuizPage() {
             </div>
             <div>
               <h2 className="text-2xl font-black text-slate-900">Bagaimana Perasaanmu?</h2>
-              <p className="text-slate-500 font-medium text-sm">Ceritakan masalah atau beban yang sedang kamu rasakan (Opsional).</p>
+              <p className="text-slate-500 font-medium text-sm">
+                Ceritakan masalah atau beban yang kamu rasakan.{' '}
+                <span className="font-bold text-slate-700">Minimal 30 kata</span> untuk melanjutkan.
+              </p>
             </div>
           </div>
 
-          <div className="mb-8">
+          <div className="mb-6">
+            {/* Textarea cerita */}
             <textarea
-              className="w-full h-48 p-5 border-2 border-slate-200 rounded-2xl bg-slate-50 focus:bg-white focus:border-slate-900 focus:ring-0 transition-all resize-none text-slate-700 placeholder:text-slate-400"
-              placeholder="Saya merasa kesulitan karena..."
+              className={`w-full h-52 p-5 border-2 rounded-2xl bg-slate-50 focus:bg-white focus:ring-0 transition-all resize-none text-slate-700 placeholder:text-slate-400 ${
+                isReady
+                  ? 'border-emerald-300 focus:border-emerald-500'
+                  : 'border-slate-200 focus:border-slate-900'
+              }`}
+              placeholder="Saya merasa kesulitan karena... (ceritakan dengan bebas, minimal 30 kata)"
               value={ceritaSiswa}
               onChange={(e) => setCeritaSiswa(e.target.value)}
-            ></textarea>
-            <p className="text-xs text-slate-400 mt-3 flex items-center gap-1.5">
-              <CheckCircle2 className="w-4 h-4 text-green-500" />
-              Cerita kamu akan dijaga kerahasiaannya dan hanya dapat dibaca oleh Guru BK.
-            </p>
+            />
+
+            {/* Progress bar & word counter */}
+            <div className="mt-3 space-y-2">
+              {/* Bar */}
+              <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all duration-300 ${
+                    isReady ? 'bg-emerald-500' : 'bg-amber-400'
+                  }`}
+                  style={{ width: `${progressPct}%` }}
+                />
+              </div>
+
+              {/* Label */}
+              <div className="flex items-center justify-between">
+                <p
+                  className={`text-xs font-bold transition-colors ${
+                    isReady ? 'text-emerald-600' : 'text-amber-600'
+                  }`}
+                >
+                  {isReady ? (
+                    <span className="flex items-center gap-1.5">
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      {wordCount} kata — syarat terpenuhi!
+                    </span>
+                  ) : (
+                    `${wordCount} / ${MIN_WORDS} kata — tambah ${wordsLeft} kata lagi`
+                  )}
+                </p>
+                <p className="text-[10px] font-bold text-slate-300 uppercase tracking-wider">
+                  {progressPct}%
+                </p>
+              </div>
+
+              {/* Privasi note */}
+              <p className="text-xs text-slate-400 flex items-center gap-1.5 pt-1">
+                <CheckCircle2 className="w-3.5 h-3.5 text-green-500 shrink-0" />
+                Cerita kamu akan dijaga kerahasiaannya dan hanya dapat dibaca oleh Guru BK.
+              </p>
+            </div>
           </div>
 
           <div className="flex flex-col sm:flex-row justify-end items-center gap-4 border-t border-slate-100 pt-6">
@@ -187,9 +245,11 @@ export default function DiagnosisQuizPage() {
             </Button>
             <Button
               onClick={() => handleSubmitTest()}
-              className="bg-slate-900 hover:bg-slate-800 text-white rounded-xl h-12 px-8 font-bold shadow-lg shadow-slate-900/20 w-full sm:w-auto"
+              disabled={!isReady}
+              title={!isReady ? `Tambahkan ${wordsLeft} kata lagi untuk melanjutkan` : undefined}
+              className="bg-slate-900 hover:bg-slate-800 text-white rounded-xl h-12 px-8 font-bold shadow-lg shadow-slate-900/20 w-full sm:w-auto disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none disabled:scale-100 transition-all"
             >
-              Kirim Jawaban & Selesai
+              Kirim Jawaban &amp; Selesai
             </Button>
           </div>
         </div>

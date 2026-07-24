@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, Newspaper, FileText, LogOut, Database, MessageCircleQuestionMark, ChevronDown, ChevronRight, Menu, X, Loader2 } from 'lucide-react';
+import { LayoutDashboard, Newspaper, FileText, LogOut, Database, MessageCircleQuestionMark, ChevronDown, ChevronRight, Menu, X, Loader2, School } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { fetchApi } from '@/lib/api';
 import { toast } from 'sonner';
@@ -15,6 +15,7 @@ function PakarSidebar({ isOpen, setIsOpen }: { isOpen: boolean, setIsOpen: (val:
 
   const navItems = [
     { href: '/pakar/home', icon: LayoutDashboard, label: 'Dashboard' },
+    { href: '/pakar/sekolah-binaan', icon: School, label: 'Sekolah Binaan' },
     { href: '/pakar/article', icon: Newspaper, label: 'Manajemen Artikel' },
     { href: '/pakar/typeTes', icon: FileText, label: 'Kategori Tes' },
   ];
