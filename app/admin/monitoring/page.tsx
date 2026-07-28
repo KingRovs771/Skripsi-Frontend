@@ -6,10 +6,11 @@ import {
 } from 'recharts';
 import {
   School, CalendarDays, RefreshCcw, ChevronDown, ChevronUp,
-  Loader2, FileText, X, TrendingUp, Users, AlertTriangle,
+  Loader2, FileText, X, TrendingUp, Users, AlertTriangle, ShieldAlert,
 } from 'lucide-react';
 import { fetchApi } from '@/lib/api';
 import { toast } from 'sonner';
+import Link from 'next/link';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -26,6 +27,7 @@ interface SchoolMonitoring {
   total_diagnoses: number;
   depresi: SeverityCount;
   cemas: SeverityCount;
+  urgent_count: number;
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -497,7 +499,10 @@ export default function AdminMonitoringPage() {
                   Sekolah
                 </th>
                 <th className="p-4 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">
-                  Total Tes
+                   Total Tes
+                </th>
+                <th className="p-4 text-[10px] font-black text-red-600 uppercase tracking-widest text-center bg-red-50/50">
+                  Urgent
                 </th>
                 {/* Depresi */}
                 <th className="p-4 text-[10px] font-black text-emerald-600 uppercase tracking-widest text-center bg-emerald-50/50">
@@ -584,6 +589,18 @@ export default function AdminMonitoringPage() {
                         <span className="font-black text-slate-900">{school.total_diagnoses}</span>
                       </td>
 
+                      {/* Urgent */}
+                      <td className="p-4 text-center">
+                        {school.urgent_count > 0 ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-black bg-red-600 text-white animate-pulse">
+                            <ShieldAlert className="w-3 h-3" />
+                            {school.urgent_count}
+                          </span>
+                        ) : (
+                          <span className="text-slate-300 text-xs">—</span>
+                        )}
+                      </td>
+
                       {/* Depresi */}
                       <td className="p-4 text-center bg-emerald-50/30">
                         <SeverityBadge level="normal" count={school.depresi.normal} />
@@ -612,17 +629,24 @@ export default function AdminMonitoringPage() {
                         <SeverityBadge level="berat" count={school.cemas.berat} />
                       </td>
 
-                      {/* Aksi */}
+                       {/* Aksi */}
                       <td className="p-4 text-right">
                         <div className="flex items-center justify-end gap-2">
+                          <Link
+                            href={`/admin/monitoring/sekolah/${school.npsn}`}
+                            onClick={(e) => e.stopPropagation()}
+                            className="px-3 py-1.5 bg-slate-900 text-white text-xs font-bold rounded-lg hover:bg-slate-700 transition-colors"
+                          >
+                            Lihat Siswa
+                          </Link>
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
                               setSelectedSchool(school);
                             }}
-                            className="px-3 py-1.5 bg-slate-900 text-white text-xs font-bold rounded-lg hover:bg-slate-700 transition-colors"
+                            className="px-3 py-1.5 bg-white border border-slate-200 text-slate-600 text-xs font-bold rounded-lg hover:bg-slate-50 transition-colors"
                           >
-                            Lihat Detail
+                            Grafik
                           </button>
                           <div className="text-slate-300 group-hover:text-slate-500 transition-colors">
                             {expandedRow === school.npsn ? (
