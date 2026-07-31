@@ -22,6 +22,7 @@ import {
 import Link from 'next/link';
 import { fetchApi } from '@/lib/api';
 import { toast } from 'sonner';
+import TrendChart from '@/components/TrendChart';
 
 interface TestResult {
   id: number;
@@ -57,6 +58,7 @@ interface StudentInfo {
   nama: string;
   kelas?: string;
   email?: string;
+  students_uid?: string;
 }
 
 type VisibilityStatus = 'loading' | 'idle';
@@ -293,6 +295,17 @@ export default function GurubkStudentDetailPage() {
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Trend Chart (Fitur 2) */}
+      {!loading && studentInfo?.students_uid && results.length >= 2 && (
+        <div className="space-y-4">
+          <h3 className="font-bold text-slate-900 text-lg flex items-center gap-2">
+            <Activity className="w-5 h-5 text-blue-500" />
+            Grafik Tren Longitudinal
+          </h3>
+          <TrendChart studentUid={studentInfo.students_uid} />
         </div>
       )}
 

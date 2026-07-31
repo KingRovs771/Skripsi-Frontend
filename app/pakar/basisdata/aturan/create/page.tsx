@@ -5,6 +5,8 @@ import { ArrowLeft, Save, Loader2, Link2 } from 'lucide-react';
 import Link from 'next/link';
 import { fetchApi } from '@/lib/api';
 import { toast } from 'sonner';
+import SimulationModal from '@/components/SimulationModal';
+
 
 interface Penyakit {
   penyakit_uid: string;
@@ -55,8 +57,19 @@ export default function CreateAturanPage() {
     is_mandatory: 1, // 1 = Wajib, 0 = Opsional
   });
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const [openSim, setOpenSim] = useState(false);
+
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formData.kode_penyakit || !formData.kode_pertanyaan) {
+      toast.error('Silakan pilih penyakit dan pertanyaan terlebih dahulu');
+      return;
+    }
+    setOpenSim(true);
+  };
+
+  const handleSaveRule = async () => {
+    setOpenSim(false);
     setLoading(true);
 
     try {
@@ -86,6 +99,7 @@ export default function CreateAturanPage() {
       setLoading(false);
     }
   };
+
 
   const set = (field: keyof typeof formData) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
@@ -192,6 +206,20 @@ export default function CreateAturanPage() {
           </button>
         </div>
       </form>
+
+      {/* Simulasi Modal (Fitur 4) */}
+      <SimulationModal
+        isOpen={openSim}
+        onClose={() => setOpenSim(false)}
+        onConfirm={handleSaveRule}
+        draftRule={{
+          kode_penyakit: formData.kode_penyakit,
+          kode_pertanyaan: formData.kode_pertanyaan,
+          min_value: Number(formData.min_value),
+          is_mandatory: Number(formData.is_mandatory),
+        }}
+      />
     </div>
   );
 }
+

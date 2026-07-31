@@ -211,50 +211,69 @@ export default function DiagnosisIntroPage() {
     daysRemaining: number;
   } | null>(null);
 
-  // ── Saat mount: cek status tes terakhir ──────────────────────────────────────
+  // ── Saat mount: cek consent → cek status tes terakhir ───────────────────────
   useEffect(() => {
-    const checkTestStatus = async () => {
-      const userUid = localStorage.getItem('student_uid') || '';
-      if (!userUid) {
-        setPageState('READY'); // fallback — biarkan backend yang reject
-        return;
+    const init = async () => {
+      // 1. Cek consent UU PDP terlebih dahulu
+      try {
+        const consentRes  = await fetchApi('/api/siswa/consent/status', { method: 'GET' });
+        const consentJson = await consentRes.json().catch(() => ({}));
+        const hasConsented = consentJson?.Data?.has_consented ?? false;
+        if (!hasConsented) {
+          router.replace('/student/consent');
+          return;
+        }
+      } catch {
+        // Jika endpoint consent error (network/server), biarkan lanjut —
+        // backend akan menolak di startTes jika perlu.
       }
 
-      try {
-        const res  = await fetchApi('/api/diagnosis/checkStatus', { method: 'GET' });
-        const json = await res.json().catch(() => ({}));
-
-        if (!res.ok) {
-          // Jika endpoint belum ada / error, biarkan siswa lanjut (graceful)
-          console.warn('checkStatus API error:', json);
-          setPageState('READY');
+      // 2. Cek status tes terakhir (cooldown / berjalan / ready)
+      const checkTestStatus = async () => {
+        const userUid = localStorage.getItem('student_uid') || '';
+        if (!userUid) {
+          setPageState('READY'); // fallback — biarkan backend yang reject
           return;
         }
 
-        const statusData: TestStatusResponse = json.Data || json.data || json;
+        try {
+          const res  = await fetchApi('/api/diagnosis/checkStatus', { method: 'GET' });
+          const json = await res.json().catch(() => ({}));
 
-        if (statusData.status === 'BERJALAN' && statusData.active_session_uid) {
-          // Simpan session uid yang masih aktif lalu redirect
-          sessionStorage.setItem('diagnosis_session_uid', statusData.active_session_uid);
-          setPageState('BERJALAN');
-        } else if (statusData.status === 'COOLDOWN' && statusData.next_available_date) {
-          setCooldownData({
-            nextDate: statusData.next_available_date,
-            lastDate: statusData.last_test_date,
-            daysRemaining: statusData.days_remaining ?? getDaysRemaining(statusData.next_available_date),
-          });
-          setPageState('COOLDOWN');
-        } else {
+          if (!res.ok) {
+            // Jika endpoint belum ada / error, biarkan siswa lanjut (graceful)
+            console.warn('checkStatus API error:', json);
+            setPageState('READY');
+            return;
+          }
+
+          const statusData: TestStatusResponse = json.Data || json.data || json;
+
+          if (statusData.status === 'BERJALAN' && statusData.active_session_uid) {
+            // Simpan session uid yang masih aktif lalu redirect
+            sessionStorage.setItem('diagnosis_session_uid', statusData.active_session_uid);
+            setPageState('BERJALAN');
+          } else if (statusData.status === 'COOLDOWN' && statusData.next_available_date) {
+            setCooldownData({
+              nextDate: statusData.next_available_date,
+              lastDate: statusData.last_test_date,
+              daysRemaining: statusData.days_remaining ?? getDaysRemaining(statusData.next_available_date),
+            });
+            setPageState('COOLDOWN');
+          } else {
+            setPageState('READY');
+          }
+        } catch {
+          // Network error — biarkan lanjut, backend yang akan handle
           setPageState('READY');
         }
-      } catch {
-        // Network error — biarkan lanjut, backend yang akan handle
-        setPageState('READY');
-      }
+      };
+
+      checkTestStatus();
     };
 
-    checkTestStatus();
-  }, []);
+    init();
+  }, [router]);
 
   // ── Handler: mulai tes baru ───────────────────────────────────────────────────
   const handleStart = async () => {

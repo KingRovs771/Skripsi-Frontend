@@ -13,9 +13,11 @@ import {
   Brain,
   BadgeCheck,
   AlertTriangle,
+  Heart,
 } from 'lucide-react';
 import Link from 'next/link';
 import { fetchApi } from '@/lib/api';
+import TrendChart from '@/components/TrendChart';
 
 interface MyTestHistory {
   id: number;
@@ -28,6 +30,8 @@ interface MyTestHistory {
   reviewed_by_gurubk: boolean;
   depresi_penyakit?: string;
   cemas_penyakit?: string;
+  depresi_saran?: string;
+  cemas_saran?: string;
   nn_depresi_confidence?: number;
   nn_cemas_confidence?: number;
   // Status validasi per-diagnosis (CONFIRMED, ADJUSTED, URGENT_INTERVENTION)
@@ -117,8 +121,11 @@ function getValidationStatusConfig(status?: string | boolean) {
 export default function StudentHistoryPage() {
   const [history, setHistory] = useState<MyTestHistory[]>([]);
   const [loading, setLoading] = useState(true);
+  const [studentUid, setStudentUid] = useState<string>('');
 
   useEffect(() => {
+    const uid = localStorage.getItem('student_uid') || '';
+    setStudentUid(uid);
     const fetchMyHistory = async () => {
       try {
         const res = await fetchApi('/api/siswa/my-history', { method: 'GET' });
@@ -170,6 +177,17 @@ export default function StudentHistoryPage() {
         </div>
       ) : (
         <div className="space-y-8">
+          {/* Trend Chart (Fitur 2) */}
+          {studentUid && visibleHistory.length >= 2 && (
+            <div className="space-y-4">
+              <h2 className="text-sm font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                <Activity className="w-4 h-4 text-blue-500" />
+                Grafik Tren Longitudinal
+              </h2>
+              <TrendChart studentUid={studentUid} />
+            </div>
+          )}
+
           {/* Hasil yang sudah disetujui untuk ditampilkan */}
           {visibleHistory.length > 0 && (
             <div>
@@ -178,6 +196,7 @@ export default function StudentHistoryPage() {
                 Hasil yang Tersedia ({visibleHistory.length})
               </h2>
               <div className="grid grid-cols-1 gap-6">
+
                 {visibleHistory.map((item) => {
                   const style = getCategoryStyle(item.skor, item.kategori);
                   return (
@@ -355,6 +374,33 @@ export default function StudentHistoryPage() {
                               </p>
                             </div>
                           )}
+
+                          {/* Saran Penanganan Dari Pakar (Fitur 5) */}
+                          {(item.depresi_saran || item.cemas_saran) && (
+                            <div className="p-4 bg-blue-50/50 rounded-2xl border border-blue-100 space-y-3">
+                              <div className="flex items-center gap-2">
+                                <Heart className="w-4 h-4 text-blue-500 animate-pulse" />
+                                <span className="text-[10px] font-black uppercase text-blue-600 tracking-widest">
+                                  Saran Penanganan Klinis Pakar
+                                </span>
+                              </div>
+                              <div className="space-y-2.5 text-xs text-slate-700 leading-relaxed font-semibold">
+                                {item.depresi_saran && (
+                                  <div>
+                                    <span className="font-bold text-slate-900 block mb-0.5">Terkait Depresi:</span>
+                                    <p className="font-medium whitespace-pre-wrap">{item.depresi_saran}</p>
+                                  </div>
+                                )}
+                                {item.cemas_saran && (
+                                  <div className={item.depresi_saran ? "pt-2 border-t border-blue-100" : ""}>
+                                    <span className="font-bold text-slate-900 block mb-0.5">Terkait Kecemasan:</span>
+                                    <p className="font-medium whitespace-pre-wrap">{item.cemas_saran}</p>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+
                         </div>
 
                         {/* Badge Skor & Kategori */}
