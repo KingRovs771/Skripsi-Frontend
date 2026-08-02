@@ -170,7 +170,7 @@ export default function ManajemenSekolahPage() {
   const fetchPakars = async () => {
     setPakarsLoading(true);
     try {
-      const res  = await fetchApi('/api/admin/users/pakars', { method: 'GET' });
+      const res  = await fetchApi('/api/users/getAllPakar', { method: 'GET' });
       const json = await res.json().catch(() => ({}));
       if (res.ok) {
         setPakars(json.Data || json.data || []);
