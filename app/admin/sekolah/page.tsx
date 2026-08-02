@@ -339,7 +339,14 @@ export default function ManajemenSekolahPage() {
               <h1 className="text-3xl font-black text-slate-900 tracking-tight">Manajemen Sekolah</h1>
               <p className="text-slate-500">Kelola daftar instansi pendidikan yang terintegrasi dalam sistem.</p>
             </div>
-            <button onClick={() => setView('create')} className="flex items-center gap-2 bg-slate-900 text-white px-6 py-2.5 rounded-2xl font-bold hover:bg-slate-800 transition-all active:scale-95 shadow-lg">
+            <button
+              onClick={() => {
+                setView('create');
+                setEditingId(null);
+                setFormData({ npsn: '', nama_sekolah: '', jenjang: '', alamat_sekolah: '' });
+              }}
+              className="flex items-center gap-2 bg-slate-900 text-white px-6 py-2.5 rounded-2xl font-bold hover:bg-slate-800 transition-all active:scale-95 shadow-lg"
+            >
               <PlusCircle className="w-5 h-5" /> Tambah Sekolah
             </button>
           </div>
