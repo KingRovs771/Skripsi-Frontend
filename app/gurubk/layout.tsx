@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, FileCheck, LogOut, MessageCircleQuestionMark, Menu, X, Loader2 } from 'lucide-react';
+import { LayoutDashboard, FileCheck, LogOut, MessageCircleQuestionMark, Newspaper, Menu, X, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { fetchApi } from '@/lib/api';
 import { toast } from 'sonner';
@@ -13,6 +13,8 @@ function AdminSidebar({ isOpen, setIsOpen }: { isOpen: boolean, setIsOpen: (val:
   const navItems = [
     { href: '/gurubk/home', icon: LayoutDashboard, label: 'Dashboard' },
     { href: '/gurubk/history', icon: FileCheck, label: 'History Diagnosis Siswa' },
+    { href: '/gurubk/article', icon: Newspaper, label: 'Kelola Artikel' },
+    { href: '/gurubk/faq', icon: MessageCircleQuestionMark, label: 'Tanya Jawab' },
   ];
 
   return (
@@ -46,31 +48,23 @@ function AdminSidebar({ isOpen, setIsOpen }: { isOpen: boolean, setIsOpen: (val:
 
         <nav className="flex-1 overflow-y-auto">
           <ul className="space-y-2">
-            {/* Menu Biasa */}
-            {navItems.map((item) => (
-              <li key={item.label}>
-                <Link 
-                  href={item.href} 
-                  onClick={() => setIsOpen(false)}
-                  className={`flex items-center p-3 rounded-xl transition-all font-medium ${pathname === item.href ? 'bg-slate-900 text-white shadow-md shadow-slate-900/20' : 'hover:bg-slate-50 text-slate-600 hover:text-slate-900'}`}
-                >
-                  <item.icon className={`w-5 h-5 mr-3 ${pathname === item.href ? 'text-white' : 'text-slate-400'}`} />
-                  {item.label}
-                </Link>
-              </li>
-            ))}
-
-            {/* Menu Tanya Jawab FAQ */}
-            <li className="pt-2 mt-2 border-t border-slate-100">
-              <Link 
-                href="/gurubk/faq" 
-                onClick={() => setIsOpen(false)}
-                className={`flex items-center p-3 rounded-xl transition-all font-medium ${pathname.includes('/gurubk/faq') ? 'bg-slate-900 text-white shadow-md shadow-slate-900/20' : 'hover:bg-slate-50 text-slate-600 hover:text-slate-900'}`}
-              >
-                <MessageCircleQuestionMark className={`w-5 h-5 mr-3 ${pathname.includes('/gurubk/faq') ? 'text-white' : 'text-slate-400'}`} />
-                Tanya Jawab
-              </Link>
-            </li>
+            {navItems.map((item) => {
+              const isActive = item.href === '/gurubk/home'
+                ? pathname === item.href
+                : pathname.startsWith(item.href);
+              return (
+                <li key={item.label}>
+                  <Link 
+                    href={item.href} 
+                    onClick={() => setIsOpen(false)}
+                    className={`flex items-center p-3 rounded-xl transition-all font-medium ${isActive ? 'bg-slate-900 text-white shadow-md shadow-slate-900/20' : 'hover:bg-slate-50 text-slate-600 hover:text-slate-900'}`}
+                  >
+                    <item.icon className={`w-5 h-5 mr-3 ${isActive ? 'text-white' : 'text-slate-400'}`} />
+                    {item.label}
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
         </nav>
       </aside>
