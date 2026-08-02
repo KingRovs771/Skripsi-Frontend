@@ -49,6 +49,8 @@ export default function GurubkEditArticlePage() {
     status: 0,
   });
 
+  const [authorName, setAuthorName] = useState('Guru BK');
+
   useEffect(() => {
     const fetchData = async () => {
       setDataFetching(true);
@@ -62,6 +64,17 @@ export default function GurubkEditArticlePage() {
           setCategoryError('Gagal memuat kategori');
         }
         setLoadingCategories(false);
+
+        // Fetch Profile
+        try {
+          const profRes = await fetchApi('/api/profileTeachers', { method: 'GET' });
+          const profJson = await profRes.json().catch(() => ({}));
+          if (profRes.ok && profJson.Data && profJson.Data.nama_lengkap) {
+            setAuthorName(profJson.Data.nama_lengkap);
+          }
+        } catch (err) {
+          console.warn('Gagal menarik profil Guru BK', err);
+        }
 
         // Ambil detail artikel
         const artRes = await fetchApi(`/api/article/gurubk/getArticleUID/${uid}`, { method: 'GET' });
@@ -140,7 +153,7 @@ export default function GurubkEditArticlePage() {
       judul_article: formData.title,
       isi_article: formData.content,
       category_uid: formData.category,
-      author: 'Guru BK',
+      author: authorName,
       status: Number(formData.status),
     };
 

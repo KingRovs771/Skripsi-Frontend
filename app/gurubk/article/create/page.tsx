@@ -38,6 +38,8 @@ export default function GurubkCreateArticlePage() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
+  const [authorName, setAuthorName] = useState('Guru BK');
+
   const [formData, setFormData] = useState({
     title: '',
     content: '',
@@ -59,7 +61,21 @@ export default function GurubkCreateArticlePage() {
         setLoadingCategories(false);
       }
     };
+
+    const fetchProfile = async () => {
+      try {
+        const res = await fetchApi('/api/profileTeachers', { method: 'GET' });
+        const json = await res.json().catch(() => ({}));
+        if (res.ok && json.Data && json.Data.nama_lengkap) {
+          setAuthorName(json.Data.nama_lengkap);
+        }
+      } catch (err) {
+        console.warn('Gagal menarik profil Guru BK', err);
+      }
+    };
+
     fetchCategories();
+    fetchProfile();
   }, []);
 
   const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -94,7 +110,7 @@ export default function GurubkCreateArticlePage() {
     data.append('judul_article', formData.title);
     data.append('isi_article', formData.content);
     data.append('category_uid', formData.category);
-    data.append('author', 'Guru BK');
+    data.append('author', authorName);
     data.append('status', formData.status.toString());
     if (selectedFile) data.append('thumbnails', selectedFile);
 
