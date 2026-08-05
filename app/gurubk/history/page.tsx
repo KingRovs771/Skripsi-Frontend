@@ -27,7 +27,7 @@ function getCategoryColor(kategori: string): string {
   if (k.includes('ringan') || k.includes('mild'))
     return 'bg-yellow-50 text-yellow-700 border-yellow-200';
   if (k.includes('sedang') || k.includes('moderate'))
-    return 'bg-orange-50 text-orangeald-700 border-orange-200';
+    return 'bg-orange-50 text-orange-700 border-orange-200';
   if (k.includes('berat') || k.includes('parah') || k.includes('severe') || k.includes('ekstrem'))
     return 'bg-red-50 text-red-700 border-red-200';
   return 'bg-slate-100 text-slate-600 border-slate-200';
@@ -204,7 +204,7 @@ export default function GurubkHistoryPage() {
       <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
         {/* Desktop Table */}
         <div className="hidden md:block overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+          <table className="w-full min-w-[1000px] text-left border-collapse">
             <thead className="bg-slate-50 border-b border-slate-200">
               <tr>
                 <th className="p-4 pl-6 font-semibold text-slate-500 text-xs uppercase tracking-widest whitespace-nowrap">#</th>
