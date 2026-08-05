@@ -36,19 +36,12 @@ export default function DiagnosisQuizPage() {
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [ceritaSiswa, setCeritaSiswa] = useState<string>('');
 
-  // Penghitung kata real-time — logika identik dengan backend Golang:
-  // strings.Fields(strings.TrimSpace(ceritaSiswa)) = split by whitespace, filter empty
-  const MIN_WORDS   = 30;
-  const wordCount   = useMemo(
-    () =>
-      ceritaSiswa.trim() === ''
-        ? 0
-        : ceritaSiswa.trim().split(/\s+/).filter(Boolean).length,
-    [ceritaSiswa],
-  );
-  const isReady     = wordCount >= MIN_WORDS;
-  const wordsLeft   = Math.max(0, MIN_WORDS - wordCount);
-  const progressPct = Math.min(100, Math.round((wordCount / MIN_WORDS) * 100));
+  // Penghitung karakter real-time (minimal 30 karakter, bukan kata)
+  const MIN_CHARS   = 30;
+  const charCount   = useMemo(() => ceritaSiswa.trim().length, [ceritaSiswa]);
+  const isReady     = charCount >= MIN_CHARS;
+  const charsLeft   = Math.max(0, MIN_CHARS - charCount);
+  const progressPct = Math.min(100, Math.round((charCount / MIN_CHARS) * 100));
 
   useEffect(() => {
     // Baca session_uid yang disimpan saat startTes di halaman intro
@@ -176,7 +169,7 @@ export default function DiagnosisQuizPage() {
               <h2 className="text-2xl font-black text-slate-900">Bagaimana Perasaanmu?</h2>
               <p className="text-slate-500 font-medium text-sm">
                 Ceritakan masalah atau beban yang kamu rasakan.{' '}
-                <span className="font-bold text-slate-700">Minimal 30 kata</span> untuk melanjutkan.
+                <span className="font-bold text-slate-700">Minimal 30 karakter</span> untuk melanjutkan.
               </p>
             </div>
           </div>
@@ -189,12 +182,12 @@ export default function DiagnosisQuizPage() {
                   ? 'border-emerald-300 focus:border-emerald-500'
                   : 'border-slate-200 focus:border-slate-900'
               }`}
-              placeholder="Saya merasa kesulitan karena... (ceritakan dengan bebas, minimal 30 kata)"
+              placeholder="Saya merasa kesulitan karena... (ceritakan dengan bebas, minimal 30 karakter)"
               value={ceritaSiswa}
               onChange={(e) => setCeritaSiswa(e.target.value)}
             />
 
-            {/* Progress bar & word counter */}
+            {/* Progress bar & character counter */}
             <div className="mt-3 space-y-2">
               {/* Bar */}
               <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
@@ -216,10 +209,10 @@ export default function DiagnosisQuizPage() {
                   {isReady ? (
                     <span className="flex items-center gap-1.5">
                       <CheckCircle2 className="w-3.5 h-3.5" />
-                      {wordCount} kata — syarat terpenuhi!
+                      {charCount} karakter — syarat terpenuhi!
                     </span>
                   ) : (
-                    `${wordCount} / ${MIN_WORDS} kata — tambah ${wordsLeft} kata lagi`
+                    `${charCount} / ${MIN_CHARS} karakter — tambah ${charsLeft} karakter lagi`
                   )}
                 </p>
                 <p className="text-[10px] font-bold text-slate-300 uppercase tracking-wider">
@@ -246,7 +239,7 @@ export default function DiagnosisQuizPage() {
             <Button
               onClick={() => handleSubmitTest()}
               disabled={!isReady}
-              title={!isReady ? `Tambahkan ${wordsLeft} kata lagi untuk melanjutkan` : undefined}
+              title={!isReady ? `Tambahkan ${charsLeft} karakter lagi untuk melanjutkan` : undefined}
               className="bg-slate-900 hover:bg-slate-800 text-white rounded-xl h-12 px-8 font-bold shadow-lg shadow-slate-900/20 w-full sm:w-auto disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none disabled:scale-100 transition-all"
             >
               Kirim Jawaban &amp; Selesai
