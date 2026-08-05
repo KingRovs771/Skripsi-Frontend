@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, FileCheck, LogOut, MessageCircleQuestionMark, Newspaper, Menu, X, Loader2 } from 'lucide-react';
+import { LayoutDashboard, FileCheck, LogOut, MessageCircleQuestionMark, Newspaper, Menu, X, Loader2, ShieldAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { fetchApi } from '@/lib/api';
 import { toast } from 'sonner';
@@ -13,6 +13,7 @@ function AdminSidebar({ isOpen, setIsOpen }: { isOpen: boolean, setIsOpen: (val:
   const navItems = [
     { href: '/gurubk/home', icon: LayoutDashboard, label: 'Dashboard' },
     { href: '/gurubk/history', icon: FileCheck, label: 'History Diagnosis Siswa' },
+    { href: '/gurubk/bully-reports', icon: ShieldAlert, label: 'Laporan Bully', highlight: true },
     { href: '/gurubk/article', icon: Newspaper, label: 'Kelola Artikel' },
     { href: '/gurubk/faq', icon: MessageCircleQuestionMark, label: 'Tanya Jawab' },
   ];

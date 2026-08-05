@@ -1,8 +1,8 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, FileCheck, LogOut, FlaskConical, MessageCircleQuestionMark, Menu, X, Loader2 } from 'lucide-react';
+import { LayoutDashboard, FileCheck, LogOut, FlaskConical, MessageCircleQuestionMark, Menu, X, Loader2, ShieldAlert, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { fetchApi } from '@/lib/api';
 import { toast } from 'sonner';
@@ -14,6 +14,7 @@ function AdminSidebar({ isOpen, setIsOpen }: { isOpen: boolean, setIsOpen: (val:
     { href: '/student/home', icon: LayoutDashboard, label: 'Dashboard' },
     { href: '/student/test', icon: FlaskConical, label: 'Test Diagnosis' },
     { href: '/student/history', icon: FileCheck, label: 'History Diagnosis Siswa' },
+    { href: '/student/lapor-bully', icon: ShieldAlert, label: 'Laporan Bully' },
   ];
 
   return (
@@ -81,23 +82,71 @@ function AdminSidebar({ isOpen, setIsOpen }: { isOpen: boolean, setIsOpen: (val:
 
 function AdminHeader({ toggleSidebar }: { toggleSidebar: () => void }) {
   const router = useRouter();
-  const [userName, setUserName] = useState('Siswa');
+  const [userName, setUserName]       = useState('Siswa');
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
+  // ── Notifikasi ──────────────────────────────────────────────────────────
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [notifs, setNotifs]           = useState<Array<{notif_uid:string; title:string; message:string; is_read:boolean; related_uid:string; created_at:string}>>([]);
+  const [showNotif, setShowNotif]     = useState(false);
+  const notifRef                      = useRef<HTMLDivElement>(null);
+
+  const fetchUnread = async () => {
+    try {
+      const res  = await fetchApi('/api/siswa/notifications/unread-count', { method: 'GET' });
+      const json = await res.json().catch(() => ({}));
+      if (res.ok) setUnreadCount(json.unread_count || 0);
+    } catch { /* silent */ }
+  };
+
+  const fetchNotifs = async () => {
+    try {
+      const res  = await fetchApi('/api/siswa/notifications', { method: 'GET' });
+      const json = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setNotifs(json.Data || []);
+        setUnreadCount(json.unread_count || 0);
+      }
+    } catch { /* silent */ }
+  };
+
+  const markRead = async (notifUID: string) => {
+    await fetchApi(`/api/siswa/notifications/${notifUID}/read`, { method: 'POST' });
+    setNotifs((prev) => prev.map((n) => n.notif_uid === notifUID ? { ...n, is_read: true } : n));
+    setUnreadCount((c) => Math.max(0, c - 1));
+  };
+
+  const markAllRead = async () => {
+    await fetchApi('/api/siswa/notifications/read-all', { method: 'POST' });
+    setNotifs((prev) => prev.map((n) => ({ ...n, is_read: true })));
+    setUnreadCount(0);
+  };
+
+  // Close dropdown saat klik di luar
   useEffect(() => {
-    // 1. Fetch Profile Name
+    const handler = (e: MouseEvent) => {
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+        setShowNotif(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  useEffect(() => {
+    // Fetch profil
     const fetchProfile = async () => {
       try {
         const res = await fetchApi('/api/profileStudents', { method: 'GET' });
         const json = await res.json().catch(() => ({}));
-        if (res.ok && json.Data && json.Data.nama_lengkap) {
-          setUserName(json.Data.nama_lengkap);
-        }
-      } catch (err) {
-        console.warn('Gagal memuat profil', err);
-      }
+        if (res.ok && json.Data && json.Data.nama_lengkap) setUserName(json.Data.nama_lengkap);
+      } catch (err) { console.warn('Gagal memuat profil', err); }
     };
     fetchProfile();
+    fetchUnread();
+    // Polling unread count setiap 60 detik
+    const interval = setInterval(fetchUnread, 60_000);
+    return () => clearInterval(interval);
   }, []);
 
   const handleLogout = () => {
@@ -113,13 +162,74 @@ function AdminHeader({ toggleSidebar }: { toggleSidebar: () => void }) {
         <Menu className="w-6 h-6" />
       </button>
 
-      <div className="flex items-center space-x-3 lg:space-x-4">
+      <div className="flex items-center space-x-2 lg:space-x-3">
         <span className="text-xs lg:text-sm font-semibold text-slate-700 hidden sm:block">Welcome, {userName}!</span>
+
+        {/* Bell Notifikasi */}
+        <div ref={notifRef} className="relative">
+          <button
+            onClick={() => { setShowNotif(!showNotif); if (!showNotif) fetchNotifs(); }}
+            className="relative p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors"
+            title="Notifikasi"
+          >
+            <Bell className="w-5 h-5" />
+            {unreadCount > 0 && (
+              <span className="absolute top-0.5 right-0.5 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
+          </button>
+
+          {/* Dropdown Notifikasi */}
+          {showNotif && (
+            <div className="absolute right-0 top-12 w-80 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 overflow-hidden">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
+                <p className="font-bold text-slate-900 text-sm">Notifikasi</p>
+                {unreadCount > 0 && (
+                  <button onClick={markAllRead} className="text-xs text-slate-400 hover:text-slate-700 font-medium transition-colors">
+                    Tandai semua dibaca
+                  </button>
+                )}
+              </div>
+              <div className="max-h-72 overflow-y-auto divide-y divide-slate-50">
+                {notifs.length === 0 ? (
+                  <div className="p-6 text-center">
+                    <Bell className="w-8 h-8 mx-auto text-slate-200 mb-2" />
+                    <p className="text-slate-400 text-sm">Tidak ada notifikasi</p>
+                  </div>
+                ) : (
+                  notifs.map((n) => (
+                    <div
+                      key={n.notif_uid}
+                      onClick={() => {
+                        if (!n.is_read) markRead(n.notif_uid);
+                        if (n.related_uid) router.push(`/student/lapor-bully/riwayat`);
+                        setShowNotif(false);
+                      }}
+                      className={`px-4 py-3 cursor-pointer transition-colors hover:bg-slate-50 ${!n.is_read ? 'bg-blue-50/50' : ''}`}
+                    >
+                      <div className="flex items-start gap-2">
+                        {!n.is_read && <span className="mt-1.5 flex-shrink-0 w-2 h-2 rounded-full bg-blue-500" />}
+                        <div className={!n.is_read ? '' : 'pl-4'}>
+                          <p className="text-sm font-semibold text-slate-900">{n.title}</p>
+                          <p className="text-xs text-slate-500 mt-0.5">{n.message}</p>
+                          <p className="text-xs text-slate-400 mt-1">
+                            {new Date(n.created_at).toLocaleDateString('id-ID', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' })}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
         <Button onClick={handleLogout} disabled={isLoggingOut} variant="outline" size="sm" className="hidden sm:flex border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-red-600 transition-colors">
           {isLoggingOut ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <LogOut className="w-4 h-4 mr-2" />}
           Logout
         </Button>
-        {/* Tombol icon log out minimalis utuk mobile yg super sempit */}
         <Button onClick={handleLogout} disabled={isLoggingOut} variant="outline" size="icon" className="sm:hidden border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-red-600 transition-colors">
           {isLoggingOut ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogOut className="w-4 h-4" />}
         </Button>
