@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   School, Users, FileText, Loader2, RefreshCcw,
   MapPin, Hash, GraduationCap, ChevronRight,
-  BarChart3, AlertTriangle, CheckCircle2,
+  BarChart3, AlertTriangle, CheckCircle2, X
 } from 'lucide-react';
 import { fetchApi } from '@/lib/api';
 import { toast } from 'sonner';
@@ -69,6 +69,136 @@ function EmptyState() {
         Anda belum ditugaskan untuk membina sekolah manapun. Hubungi Administrator untuk
         penetapan sekolah binaan.
       </p>
+    </div>
+  );
+}
+
+// ─── School Detail Modal ───────────────────────────────────────────────────────
+
+function SchoolDetailModal({
+  school,
+  onClose,
+}: {
+  school: SekolahBinaan;
+  onClose: () => void;
+}) {
+  const depresiData = [
+    { name: 'Normal/Minimal', value: school.depresi_normal, fill: '#10b981' },
+    { name: 'Ringan',         value: school.depresi_ringan, fill: '#3b82f6' },
+    { name: 'Sedang',         value: school.depresi_sedang, fill: '#f59e0b' },
+    { name: 'Berat',          value: school.depresi_berat, fill: '#ef4444' },
+  ];
+
+  const cemasData = [
+    { name: 'Normal/Minimal', value: school.cemas_normal, fill: '#10b981' },
+    { name: 'Ringan',         value: school.cemas_ringan, fill: '#3b82f6' },
+    { name: 'Sedang',         value: school.cemas_sedang, fill: '#f59e0b' },
+    { name: 'Berat',          value: school.cemas_berat, fill: '#ef4444' },
+  ];
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-white w-full max-w-3xl rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
+        {/* Header Modal */}
+        <div className="bg-slate-900 px-8 py-6 flex items-start justify-between shrink-0">
+          <div>
+            <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">
+              NPSN {school.npsn}
+            </p>
+            <h2 className="text-xl font-black text-white">{school.nama_sekolah}</h2>
+            <p className="text-slate-400 text-sm mt-1">
+              {school.total_tes_selesai} total diagnosis tercatat
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="mt-1 p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Body Modal */}
+        <div className="p-8 overflow-y-auto space-y-8 flex-1">
+          {/* Depresi Chart */}
+          <div>
+            <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest mb-4">
+              Tingkat Keparahan — Depresi (PHQ-9)
+            </h3>
+            <div className="h-52">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={depresiData} margin={{ top: 0, right: 10, left: -10, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} allowDecimals={false} />
+                  <Tooltip
+                    cursor={{ fill: '#f8fafc' }}
+                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 20px -2px rgba(0,0,0,.1)' }}
+                  />
+                  <Bar dataKey="value" name="Jumlah Siswa" radius={[6, 6, 0, 0]} maxBarSize={56}>
+                    {depresiData.map((entry, i) => (
+                      <Cell key={i} fill={entry.fill} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Cemas Chart */}
+          <div>
+            <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest mb-4">
+              Tingkat Keparahan — Kecemasan (GAD-7)
+            </h3>
+            <div className="h-52">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={cemasData} margin={{ top: 0, right: 10, left: -10, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} allowDecimals={false} />
+                  <Tooltip
+                    cursor={{ fill: '#f8fafc' }}
+                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 20px -2px rgba(0,0,0,.1)' }}
+                  />
+                  <Bar dataKey="value" name="Jumlah Siswa" radius={[6, 6, 0, 0]} maxBarSize={56}>
+                    {cemasData.map((entry, i) => (
+                      <Cell key={i} fill={entry.fill} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Legend */}
+          <div className="flex flex-wrap gap-4 pt-4 border-t border-slate-100 shrink-0">
+            {[
+              { color: '#10b981', label: 'Normal/Minimal' },
+              { color: '#3b82f6', label: 'Ringan' },
+              { color: '#f59e0b', label: 'Sedang' },
+              { color: '#ef4444', label: 'Berat' },
+            ].map((item) => (
+              <div key={item.label} className="flex items-center gap-2">
+                <div
+                  className="w-3 h-3 rounded-full"
+                  style={{ backgroundColor: item.color }}
+                />
+                <span className="text-xs font-medium text-slate-600">{item.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Footer Modal */}
+        <div className="bg-slate-50 px-8 py-4 border-t border-slate-100 flex justify-end shrink-0">
+          <button
+            onClick={onClose}
+            className="px-5 py-2.5 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition-all active:scale-95 shadow-sm"
+          >
+            Tutup
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -267,134 +397,68 @@ export default function PakarSekolahBinaanPage() {
       {/* ── Grafik Sekolah Binaan ── */}
       {!loading && schools.length > 0 && (
         <div className="bg-slate-50 border border-slate-200 rounded-3xl p-6 space-y-6">
-          <div className="flex items-center justify-between flex-wrap gap-4">
-            <div>
-              <h2 className="text-base font-black text-slate-900">
-                {selectedSchoolNpsn && activeSchool
-                  ? `Analisis Detail: ${activeSchool.nama_sekolah}`
-                  : 'Analisis Kumulatif Sekolah Binaan'}
-              </h2>
-              <p className="text-xs text-slate-500 mt-0.5">
-                {selectedSchoolNpsn && activeSchool
-                  ? `Menampilkan distribusi tingkat keparahan siswa di ${activeSchool.nama_sekolah}.`
-                  : 'Klik salah satu kartu sekolah di bawah untuk melihat grafik detail sekolah tersebut.'}
-              </p>
-            </div>
-            {selectedSchoolNpsn && (
-              <button
-                type="button"
-                onClick={() => setSelectedSchoolNpsn(null)}
-                className="px-4 py-2 bg-slate-900 text-white hover:bg-slate-800 rounded-xl text-xs font-bold transition-all active:scale-95 shadow-sm"
-              >
-                Tampilkan Semua Sekolah
-              </button>
-            )}
+          <div>
+            <h2 className="text-base font-black text-slate-900 font-sans tracking-tight">Analisis Kumulatif Sekolah Binaan</h2>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Berikut perbandingan keaktifan siswa dan sebaran kasus. Klik kartu sekolah di bawah untuk analisis detail.
+            </p>
           </div>
 
-          {selectedSchoolNpsn && activeSchool ? (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Depresi Chart */}
-              <div className="bg-white border border-slate-150 rounded-2xl p-6 shadow-sm">
-                <div className="mb-4">
-                  <h3 className="text-sm font-black text-slate-700 uppercase tracking-wider">Tingkat Keparahan — Depresi (PHQ-9)</h3>
-                </div>
-                <div className="h-64 w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={depresiData}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
-                      <XAxis dataKey="name" stroke="#64748B" fontSize={10} tickLine={false} axisLine={false} />
-                      <YAxis stroke="#64748B" fontSize={10} tickLine={false} axisLine={false} allowDecimals={false} />
-                      <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                      <Bar dataKey="value" name="Jumlah Siswa" radius={[4, 4, 0, 0]}>
-                        {depresiData.map((entry, idx) => (
-                          <Cell key={idx} fill={entry.fill} />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Chart 1: Partisipasi */}
+            <div className="bg-white border border-slate-150 rounded-2xl p-6 shadow-sm">
+              <div className="mb-4">
+                <h3 className="text-sm font-black text-slate-700 uppercase tracking-wider">Partisipasi &amp; Total Siswa</h3>
               </div>
-
-              {/* Cemas Chart */}
-              <div className="bg-white border border-slate-150 rounded-2xl p-6 shadow-sm">
-                <div className="mb-4">
-                  <h3 className="text-sm font-black text-slate-700 uppercase tracking-wider">Tingkat Keparahan — Kecemasan (GAD-7)</h3>
-                </div>
-                <div className="h-64 w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={cemasData}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
-                      <XAxis dataKey="name" stroke="#64748B" fontSize={10} tickLine={false} axisLine={false} />
-                      <YAxis stroke="#64748B" fontSize={10} tickLine={false} axisLine={false} allowDecimals={false} />
-                      <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                      <Bar dataKey="value" name="Jumlah Siswa" radius={[4, 4, 0, 0]}>
-                        {cemasData.map((entry, idx) => (
-                          <Cell key={idx} fill={entry.fill} />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
+              <div className="h-64 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={schools.map(s => ({
+                    name: s.nama_sekolah.length > 15 ? s.nama_sekolah.substring(0, 15) + '...' : s.nama_sekolah,
+                    "Total Siswa": s.total_siswa,
+                    "Tes Selesai": s.total_tes_selesai,
+                  }))}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
+                    <XAxis dataKey="name" stroke="#64748B" fontSize={10} tickLine={false} axisLine={false} />
+                    <YAxis stroke="#64748B" fontSize={10} tickLine={false} axisLine={false} />
+                    <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                    <Legend iconType="circle" wrapperStyle={{ fontSize: '11px' }} />
+                    <Bar dataKey="Total Siswa" fill="#3B82F6" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="Tes Selesai" fill="#10B981" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
               </div>
             </div>
-          ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Chart 1: Partisipasi */}
-              <div className="bg-white border border-slate-150 rounded-2xl p-6 shadow-sm">
-                <div className="mb-4">
-                  <h3 className="text-sm font-black text-slate-700 uppercase tracking-wider">Partisipasi &amp; Total Siswa</h3>
-                </div>
-                <div className="h-64 w-full">
+
+            {/* Chart 2: Butuh Perhatian */}
+            <div className="bg-white border border-slate-150 rounded-2xl p-6 shadow-sm">
+              <div className="mb-4">
+                <h3 className="text-sm font-black text-slate-700 uppercase tracking-wider">Kasus Butuh Perhatian (Skor &gt; 75)</h3>
+              </div>
+              <div className="h-64 w-full">
+                {totalButuhPerhatian > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={schools.map(s => ({
                       name: s.nama_sekolah.length > 15 ? s.nama_sekolah.substring(0, 15) + '...' : s.nama_sekolah,
-                      "Total Siswa": s.total_siswa,
-                      "Tes Selesai": s.total_tes_selesai,
+                      "Butuh Perhatian": s.butuh_perhatian,
                     }))}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
                       <XAxis dataKey="name" stroke="#64748B" fontSize={10} tickLine={false} axisLine={false} />
                       <YAxis stroke="#64748B" fontSize={10} tickLine={false} axisLine={false} />
                       <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
                       <Legend iconType="circle" wrapperStyle={{ fontSize: '11px' }} />
-                      <Bar dataKey="Total Siswa" fill="#3B82F6" radius={[4, 4, 0, 0]} />
-                      <Bar dataKey="Tes Selesai" fill="#10B981" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="Butuh Perhatian" fill="#EF4444" radius={[4, 4, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
-                </div>
-              </div>
-
-              {/* Chart 2: Butuh Perhatian */}
-              <div className="bg-white border border-slate-150 rounded-2xl p-6 shadow-sm">
-                <div className="mb-4">
-                  <h3 className="text-sm font-black text-slate-700 uppercase tracking-wider">Kasus Butuh Perhatian (Skor &gt; 75)</h3>
-                </div>
-                <div className="h-64 w-full">
-                  {totalButuhPerhatian > 0 ? (
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={schools.map(s => ({
-                        name: s.nama_sekolah.length > 15 ? s.nama_sekolah.substring(0, 15) + '...' : s.nama_sekolah,
-                        "Butuh Perhatian": s.butuh_perhatian,
-                      }))}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
-                        <XAxis dataKey="name" stroke="#64748B" fontSize={10} tickLine={false} axisLine={false} />
-                        <YAxis stroke="#64748B" fontSize={10} tickLine={false} axisLine={false} />
-                        <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                        <Legend iconType="circle" wrapperStyle={{ fontSize: '11px' }} />
-                        <Bar dataKey="Butuh Perhatian" fill="#EF4444" radius={[4, 4, 0, 0]} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  ) : (
-                    <div className="h-full flex items-center justify-center text-slate-400 text-xs font-semibold">
-                      Tidak ada kasus yang butuh perhatian di seluruh sekolah binaan Anda.
-                    </div>
-                  )}
-                </div>
+                ) : (
+                  <div className="h-full flex items-center justify-center text-slate-400 text-xs font-semibold">
+                    Tidak ada kasus yang butuh perhatian di seluruh sekolah binaan Anda.
+                  </div>
+                )}
               </div>
             </div>
-          )}
+          </div>
         </div>
       )}
-
 
       {/* ── Alert jika ada yang butuh perhatian ── */}
       {!loading && totalButuhPerhatian > 0 && (
@@ -407,18 +471,6 @@ export default function PakarSekolahBinaanPage() {
             <p className="text-xs text-red-600 mt-0.5">
               Terdapat siswa dengan tingkat keparahan Sedang atau Berat pada tes diagnosis terbaru.
               Pertimbangkan untuk berkoordinasi dengan Guru BK masing-masing sekolah.
-            </p>
-          </div>
-        </div>
-      )}
-
-      {!loading && totalButuhPerhatian === 0 && schools.length > 0 && (
-        <div className="flex items-start gap-4 p-5 bg-emerald-50 border border-emerald-200 rounded-2xl">
-          <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
-          <div>
-            <p className="font-bold text-emerald-800 text-sm">Semua sekolah binaan dalam kondisi baik</p>
-            <p className="text-xs text-emerald-600 mt-0.5">
-              Tidak ada siswa yang terdeteksi membutuhkan intervensi mendesak saat ini.
             </p>
           </div>
         </div>
@@ -454,8 +506,8 @@ export default function PakarSekolahBinaanPage() {
             <SchoolCard
               key={school.npsn}
               school={school}
-              onSelect={() => setSelectedSchoolNpsn(school.npsn === selectedSchoolNpsn ? null : school.npsn)}
-              isSelected={school.npsn === selectedSchoolNpsn}
+              onSelect={() => setSelectedSchoolNpsn(school.npsn)}
+              isSelected={selectedSchoolNpsn === school.npsn}
             />
           ))}
         </div>
@@ -467,6 +519,14 @@ export default function PakarSekolahBinaanPage() {
           Statistik diperbarui secara real-time berdasarkan seluruh riwayat tes siswa •
           Butuh Perhatian = siswa dengan diagnosis Sedang atau Berat
         </p>
+      )}
+
+      {/* ── Detail Modal ── */}
+      {selectedSchoolNpsn && activeSchool && (
+        <SchoolDetailModal
+          school={activeSchool}
+          onClose={() => setSelectedSchoolNpsn(null)}
+        />
       )}
     </div>
   );
