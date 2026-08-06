@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { PlusCircle, Pencil, Trash2, Loader2, Scale, Search, ShieldCheck } from 'lucide-react';
+import { PlusCircle, Pencil, Trash2, Loader2, Scale, Search, ShieldCheck, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { fetchApi } from '@/lib/api';
@@ -17,6 +17,8 @@ interface Aturan {
   kode_pertanyaan: string;
   min_value: number;
   is_mandatory: number;
+  tipe_aturan?: string;
+  berlaku_untuk_semua_tingkat?: boolean;
 }
 
 export default function PakarAturanPage() {
@@ -55,7 +57,8 @@ export default function PakarAturanPage() {
   const filtered = aturanList.filter(
     (a) =>
       a.kode_penyakit?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      a.kode_pertanyaan?.toLowerCase().includes(searchQuery.toLowerCase())
+      a.kode_pertanyaan?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (a.tipe_aturan ?? '').toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   // ── DELETE OPERATION ──
@@ -106,7 +109,7 @@ export default function PakarAturanPage() {
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
         <input
           className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-900 outline-none text-sm shadow-sm"
-          placeholder="Cari berdasarkan Kode Penyakit atau Kode Pertanyaan..."
+          placeholder="Cari berdasarkan Kode Penyakit, Kode Pertanyaan, atau Tipe Aturan..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />
@@ -119,16 +122,17 @@ export default function PakarAturanPage() {
               <TableRow>
                 <TableHead className="w-[80px] py-4 font-bold text-slate-700">No.</TableHead>
                 <TableHead className="font-bold text-slate-700">Kode Penyakit</TableHead>
+                <TableHead className="font-bold text-slate-700">Tipe Aturan</TableHead>
                 <TableHead className="font-bold text-slate-700">Kode Pertanyaan</TableHead>
                 <TableHead className="font-bold text-slate-700 text-center">Minimal Jawaban</TableHead>
-                <TableHead className="font-bold text-slate-700">Wajib</TableHead>
+                <TableHead className="font-bold text-slate-700">Sifat</TableHead>
                 <TableHead className="text-right font-bold text-slate-700 pr-6">Aksi</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loadingInitial ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="h-40 text-center text-slate-400">
+                  <TableCell colSpan={7} className="h-40 text-center text-slate-400">
                     <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3" />
                     Memuat data aturan...
                   </TableCell>
@@ -137,7 +141,24 @@ export default function PakarAturanPage() {
                 filtered.map((aturan, index) => (
                   <TableRow key={aturan.aturan_uid || index} className="hover:bg-slate-50/50 transition-colors">
                     <TableCell className="py-4 text-slate-500 font-medium">{index + 1}</TableCell>
-                    <TableCell className="font-bold text-slate-900">{aturan.kode_penyakit}</TableCell>
+                    <TableCell className="font-bold text-slate-900">
+                      {aturan.kode_penyakit === 'ALL' ? (
+                        <span className="text-slate-400 italic">Semua Penyakit</span>
+                      ) : (
+                        aturan.kode_penyakit
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {aturan.tipe_aturan === 'RED_FLAG' ? (
+                        <span className="inline-flex items-center px-2.5 py-0.5 text-xs font-bold rounded-full bg-red-50 text-red-700 border border-red-100 gap-1">
+                          <AlertTriangle className="w-3 h-3 text-red-500" /> Red Flag
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2.5 py-0.5 text-xs font-bold rounded-full bg-blue-50 text-blue-700 border border-blue-100">
+                          Gejala Inti
+                        </span>
+                      )}
+                    </TableCell>
                     <TableCell className="font-medium text-slate-700">{aturan.kode_pertanyaan}</TableCell>
                     <TableCell className="text-center">
                       <span className="px-3 py-1 bg-slate-100 text-slate-600 rounded-lg text-sm font-bold">{aturan.min_value}</span>
@@ -169,7 +190,7 @@ export default function PakarAturanPage() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-20 text-slate-400 font-medium italic">
+                  <TableCell colSpan={7} className="text-center py-20 text-slate-400 font-medium italic">
                     Belum ada data aturan yang tersedia.
                   </TableCell>
                 </TableRow>

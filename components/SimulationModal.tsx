@@ -9,6 +9,8 @@ interface DraftRule {
   kode_pertanyaan: string;
   min_value: number;
   is_mandatory: number;
+  tipe_aturan?: string;
+  berlaku_untuk_semua_tingkat?: boolean;
 }
 
 interface SimulationModalProps {
@@ -52,6 +54,8 @@ export default function SimulationModal({ isOpen, onClose, onConfirm, draftRule 
               kode_pertanyaan: draftRule.kode_pertanyaan,
               min_value: Number(draftRule.min_value),
               is_mandatory: Number(draftRule.is_mandatory),
+              tipe_aturan: draftRule.tipe_aturan || 'GEJALA_INTI',
+              berlaku_untuk_semua_tingkat: !!draftRule.berlaku_untuk_semua_tingkat,
             },
           ],
         }),

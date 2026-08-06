@@ -6,9 +6,8 @@ import Link from 'next/link';
 import { fetchApi } from '@/lib/api';
 import { toast } from 'sonner';
 
-// ── Helper: generate kode berikutnya dari daftar yang ada ──────────────────
+// Helper to auto-generate next code
 function generateNextKode(existingKodes: string[]): string {
-  // Ambil semua kode berbentuk P + angka, cari nomor terbesar
   const nums = existingKodes
     .map((k) => {
       const match = k.toUpperCase().match(/^P(\d+)$/);
@@ -25,7 +24,7 @@ export default function CreatePenyakitPage() {
   const [loading, setLoading] = useState(false);
   const [loadingKode, setLoadingKode] = useState(true);
 
-  // Daftar penyakit untuk dropdown kode_turunan
+  // Disease list for kode_turunan dropdown
   const [penyakitList, setPenyakitList] = useState<{ kode_penyakit: string; nama_penyakit: string }[]>([]);
 
   const [formData, setFormData] = useState({
@@ -34,18 +33,20 @@ export default function CreatePenyakitPage() {
     kode_turunan: '',
     description: '',
     saran_penanganan: '',
+    min_skor: 0,
+    max_skor: 27,
   });
 
   const [errors, setErrors] = useState<Partial<typeof formData>>({});
 
-  // ── AUTO-GENERATE KODE PENYAKIT ────────────────────────────────────────────
+  // AUTO-GENERATE KODE PENYAKIT
   const generateKode = async () => {
     setLoadingKode(true);
     try {
       const res = await fetchApi('/api/penyakit/getAllPenyakits');
       const json = await res.json().catch(() => ({}));
       const list: { kode_penyakit: string; nama_penyakit: string }[] = json.Data || json.data || [];
-      setPenyakitList(list); // simpan untuk dropdown kode_turunan
+      setPenyakitList(list);
       const kodes = list.map((p) => p.kode_penyakit).filter(Boolean);
       const nextKode = generateNextKode(kodes);
       setFormData((f) => ({ ...f, kode_penyakit: nextKode }));
@@ -60,7 +61,7 @@ export default function CreatePenyakitPage() {
     generateKode();
   }, []);
 
-  // ── VALIDASI CLIENT-SIDE ──────────────────────────────────────────────────
+  // CLIENT-SIDE VALIDATION
   const validate = (): boolean => {
     const newErrors: Partial<typeof formData> = {};
 
@@ -82,11 +83,19 @@ export default function CreatePenyakitPage() {
       newErrors.saran_penanganan = 'Saran penanganan wajib diisi.';
     }
 
+    if (formData.min_skor < 0) {
+      newErrors.min_skor = 'Minimal skor tidak boleh kurang dari 0.';
+    }
+
+    if (formData.max_skor < formData.min_skor) {
+      newErrors.max_skor = 'Maksimal skor tidak boleh kurang dari minimal skor.';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  // ── SUBMIT CREATE ─────────────────────────────────────────────────────────
+  // SUBMIT CREATE
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
@@ -99,6 +108,8 @@ export default function CreatePenyakitPage() {
         kode_turunan: formData.kode_turunan.toUpperCase().trim(),
         description: formData.description.trim(),
         saran_penanganan: formData.saran_penanganan.trim(),
+        min_skor: Number(formData.min_skor),
+        max_skor: Number(formData.max_skor),
       };
 
       const res = await fetchApi('/api/penyakit/createPenyakit', {
@@ -124,7 +135,8 @@ export default function CreatePenyakitPage() {
   const handleChange =
     (field: keyof typeof formData) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-      setFormData((f) => ({ ...f, [field]: e.target.value }));
+      const val = e.target.type === 'number' ? Number(e.target.value) : e.target.value;
+      setFormData((f) => ({ ...f, [field]: val }));
       if (errors[field]) setErrors((prev) => ({ ...prev, [field]: undefined }));
     };
 
@@ -162,7 +174,7 @@ export default function CreatePenyakitPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-              {/* Kode Penyakit — Auto-generated, masih bisa diedit manual */}
+              {/* Kode Penyakit */}
               <div className="space-y-2">
                 <label htmlFor="kode_penyakit" className="text-sm font-semibold text-slate-700">
                   Kode Penyakit <span className="text-red-500">*</span>
@@ -184,7 +196,6 @@ export default function CreatePenyakitPage() {
                       disabled={loadingKode}
                     />
                   </div>
-                  {/* Tombol regenerate kode */}
                   <button
                     type="button"
                     onClick={generateKode}
@@ -225,7 +236,49 @@ export default function CreatePenyakitPage() {
                 )}
               </div>
 
-              {/* Kode Turunan — Dropdown pilih dari penyakit yang ada */}
+              {/* Rentang Skor - Min */}
+              <div className="space-y-2">
+                <label htmlFor="min_skor" className="text-sm font-semibold text-slate-700">
+                  Minimal Skor Validasi <span className="text-red-500">*</span>
+                </label>
+                <input
+                  id="min_skor"
+                  type="number"
+                  min="0"
+                  className={inputClass('min_skor')}
+                  placeholder="0"
+                  value={formData.min_skor}
+                  onChange={handleChange('min_skor')}
+                />
+                {errors.min_skor && (
+                  <p className="text-xs text-red-500 flex items-center gap-1 mt-1">
+                    <AlertCircle className="w-3 h-3" /> {errors.min_skor}
+                  </p>
+                )}
+              </div>
+
+              {/* Rentang Skor - Max */}
+              <div className="space-y-2">
+                <label htmlFor="max_skor" className="text-sm font-semibold text-slate-700">
+                  Maksimal Skor Validasi <span className="text-red-500">*</span>
+                </label>
+                <input
+                  id="max_skor"
+                  type="number"
+                  min="0"
+                  className={inputClass('max_skor')}
+                  placeholder="27"
+                  value={formData.max_skor}
+                  onChange={handleChange('max_skor')}
+                />
+                {errors.max_skor && (
+                  <p className="text-xs text-red-500 flex items-center gap-1 mt-1">
+                    <AlertCircle className="w-3 h-3" /> {errors.max_skor}
+                  </p>
+                )}
+              </div>
+
+              {/* Kode Turunan */}
               <div className="space-y-2 md:col-span-2">
                 <label htmlFor="kode_turunan" className="text-sm font-semibold text-slate-700">
                   Kode Turunan{' '}

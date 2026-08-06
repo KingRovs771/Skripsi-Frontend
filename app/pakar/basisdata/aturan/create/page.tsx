@@ -7,7 +7,6 @@ import { fetchApi } from '@/lib/api';
 import { toast } from 'sonner';
 import SimulationModal from '@/components/SimulationModal';
 
-
 interface Penyakit {
   penyakit_uid: string;
   kode_penyakit: string;
@@ -55,14 +54,27 @@ export default function CreateAturanPage() {
     kode_pertanyaan: '',
     min_value: 0,
     is_mandatory: 1, // 1 = Wajib, 0 = Opsional
+    tipe_aturan: 'GEJALA_INTI', // GEJALA_INTI / RED_FLAG
+    berlaku_untuk_semua_tingkat: false,
   });
 
   const [openSim, setOpenSim] = useState(false);
 
+  const handleTipeAturanChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const val = e.target.value;
+    setFormData((f) => ({
+      ...f,
+      tipe_aturan: val,
+      ...(val === 'RED_FLAG'
+        ? { kode_penyakit: 'ALL', berlaku_untuk_semua_tingkat: true }
+        : { kode_penyakit: f.kode_penyakit === 'ALL' ? '' : f.kode_penyakit, berlaku_untuk_semua_tingkat: false }),
+    }));
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.kode_penyakit || !formData.kode_pertanyaan) {
-      toast.error('Silakan pilih penyakit dan pertanyaan terlebih dahulu');
+      toast.error('Silakan pilih penyakit/kategori dan pertanyaan terlebih dahulu');
       return;
     }
     setOpenSim(true);
@@ -78,6 +90,8 @@ export default function CreateAturanPage() {
         kode_pertanyaan: formData.kode_pertanyaan,
         min_value: Number(formData.min_value),
         is_mandatory: Number(formData.is_mandatory),
+        tipe_aturan: formData.tipe_aturan,
+        berlaku_untuk_semua_tingkat: formData.berlaku_untuk_semua_tingkat,
       };
 
       const res = await fetchApi('/api/aturan/createAturan', {
@@ -100,10 +114,13 @@ export default function CreateAturanPage() {
     }
   };
 
-
   const set = (field: keyof typeof formData) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
       setFormData((f) => ({ ...f, [field]: e.target.value }));
+
+  const setCheckbox = (field: 'berlaku_untuk_semua_tingkat') =>
+    (e: React.ChangeEvent<HTMLInputElement>) =>
+      setFormData((f) => ({ ...f, [field]: e.target.checked }));
 
   const inputClass = "w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-base";
 
@@ -127,23 +144,48 @@ export default function CreateAturanPage() {
             </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Tipe Aturan */}
               <div className="space-y-2">
-                <label className="text-sm font-semibold text-slate-700">Kode Penyakit</label>
+                <label className="text-sm font-semibold text-slate-700">Tipe Aturan</label>
                 <select
                   className={inputClass}
+                  value={formData.tipe_aturan}
+                  onChange={handleTipeAturanChange}
                   required
-                  value={formData.kode_penyakit}
-                  onChange={set('kode_penyakit')}
                 >
-                  <option value="" disabled>Pilih Penyakit</option>
-                  {penyakitList.map(p => (
-                    <option key={p.penyakit_uid} value={p.kode_penyakit}>
-                      {p.kode_penyakit} - {p.nama_penyakit}
-                    </option>
-                  ))}
+                  <option value="GEJALA_INTI">Gejala Inti (Satu Kelas Penyakit)</option>
+                  <option value="RED_FLAG">Red Flag (Lintas Semua Tingkat)</option>
                 </select>
               </div>
 
+              {/* Kode Penyakit */}
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-slate-700">Kode Penyakit</label>
+                {formData.tipe_aturan === 'RED_FLAG' ? (
+                  <input
+                    type="text"
+                    disabled
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-500 font-bold"
+                    value="ALL (Berlaku untuk semua penyakit)"
+                  />
+                ) : (
+                  <select
+                    className={inputClass}
+                    required
+                    value={formData.kode_penyakit}
+                    onChange={set('kode_penyakit')}
+                  >
+                    <option value="" disabled>Pilih Penyakit</option>
+                    {penyakitList.map(p => (
+                      <option key={p.penyakit_uid} value={p.kode_penyakit}>
+                        {p.kode_penyakit} - {p.nama_penyakit}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+
+              {/* Kode Pertanyaan */}
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-slate-700">Kode Pertanyaan</label>
                 <select
@@ -161,6 +203,7 @@ export default function CreateAturanPage() {
                 </select>
               </div>
 
+              {/* Minimal Jawaban */}
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-slate-700">Minimal Jawaban (Skor/Nilai)</label>
                 <input
@@ -168,12 +211,14 @@ export default function CreateAturanPage() {
                   className={inputClass}
                   placeholder="0"
                   min="0"
+                  max="3"
                   required
                   value={formData.min_value}
                   onChange={set('min_value')}
                 />
               </div>
 
+              {/* Sifat Pertanyaan */}
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-slate-700">Sifat Pertanyaan</label>
                 <select
@@ -186,6 +231,22 @@ export default function CreateAturanPage() {
                   <option value={0}>Opsional</option>
                 </select>
               </div>
+
+              {/* Berlaku untuk Semua Tingkat (Tampil hanya jika bukan RED_FLAG, karena RED_FLAG otomatis true) */}
+              {formData.tipe_aturan !== 'RED_FLAG' && (
+                <div className="flex items-center space-x-3 pt-8">
+                  <input
+                    id="berlaku_semua"
+                    type="checkbox"
+                    checked={formData.berlaku_untuk_semua_tingkat}
+                    onChange={setCheckbox('berlaku_untuk_semua_tingkat')}
+                    className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
+                  />
+                  <label htmlFor="berlaku_semua" className="text-sm font-semibold text-slate-700 cursor-pointer select-none">
+                    Berlaku untuk Semua Tingkat
+                  </label>
+                </div>
+              )}
             </div>
           </section>
 
@@ -217,9 +278,10 @@ export default function CreateAturanPage() {
           kode_pertanyaan: formData.kode_pertanyaan,
           min_value: Number(formData.min_value),
           is_mandatory: Number(formData.is_mandatory),
+          tipe_aturan: formData.tipe_aturan,
+          berlaku_untuk_semua_tingkat: formData.berlaku_untuk_semua_tingkat,
         }}
       />
     </div>
   );
 }
-

@@ -18,6 +18,8 @@ interface Penyakit {
   kode_turunan: string;
   description: string;
   saran_penanganan: string;
+  min_skor?: number;
+  max_skor?: number;
 }
 
 export default function PakarPenyakitPage() {
@@ -34,7 +36,6 @@ export default function PakarPenyakitPage() {
   const fetchPenyakit = async () => {
     setLoadingInitial(true);
     try {
-      // Endpoint ini menyesuaikan dengan backend Anda (GetAllPenyakits atau getAllPenyakit)
       const res = await fetchApi('/api/penyakit/getAllPenyakits');
       const json = await res.json().catch(() => ({}));
       if (res.ok) {
@@ -75,7 +76,7 @@ export default function PakarPenyakitPage() {
       });
       const json = await res.json().catch(() => ({}));
       
-      if (res.ok || json.Status === "Not Found" || res.status === 404 /* Backend returns 404 for success deleting */) {
+      if (res.ok || json.Status === "Not Found" || res.status === 404) {
         toast.success('Penyakit berhasil dihapus.');
         setPenyakitList((prev) => prev.filter((item) => item.penyakit_uid !== selectedUid));
       } else {
@@ -122,6 +123,7 @@ export default function PakarPenyakitPage() {
                 <TableHead className="w-[60px] py-4 font-bold text-slate-700">No.</TableHead>
                 <TableHead className="w-[90px] font-bold text-slate-700">Kode</TableHead>
                 <TableHead className="font-bold text-slate-700">Nama Penyakit</TableHead>
+                <TableHead className="w-[120px] font-bold text-slate-700 text-center">Rentang Skor</TableHead>
                 <TableHead className="w-[110px] font-bold text-slate-700">Kode Turunan</TableHead>
                 <TableHead className="font-bold text-slate-700">Deskripsi Singkat</TableHead>
                 <TableHead className="text-right font-bold text-slate-700 pr-6">Aksi</TableHead>
@@ -130,7 +132,7 @@ export default function PakarPenyakitPage() {
             <TableBody>
               {loadingInitial ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="h-40 text-center text-slate-400">
+                  <TableCell colSpan={7} className="h-40 text-center text-slate-400">
                     <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3" />
                     Memuat data penyakit...
                   </TableCell>
@@ -141,6 +143,15 @@ export default function PakarPenyakitPage() {
                     <TableCell className="py-4 text-slate-500 font-medium">{index + 1}</TableCell>
                     <TableCell className="font-bold text-emerald-600 font-mono">{penyakit.kode_penyakit}</TableCell>
                     <TableCell className="font-bold text-slate-900">{penyakit.nama_penyakit}</TableCell>
+                    <TableCell className="text-center font-bold text-slate-700">
+                      {penyakit.min_skor !== undefined && penyakit.max_skor !== undefined ? (
+                        <span className="px-2.5 py-1 bg-slate-100 text-slate-700 rounded-lg text-xs font-black">
+                          {penyakit.min_skor} - {penyakit.max_skor}
+                        </span>
+                      ) : (
+                        <span className="text-slate-300 text-xs">—</span>
+                      )}
+                    </TableCell>
                     <TableCell>
                       {penyakit.kode_turunan ? (
                         <span className="inline-block px-2.5 py-1 text-xs font-bold font-mono rounded-lg bg-blue-50 text-blue-700 border border-blue-100">
@@ -169,7 +180,7 @@ export default function PakarPenyakitPage() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-20 text-slate-400 font-medium italic">
+                  <TableCell colSpan={7} className="text-center py-20 text-slate-400 font-medium italic">
                     Belum ada data penyakit yang tersedia.
                   </TableCell>
                 </TableRow>
