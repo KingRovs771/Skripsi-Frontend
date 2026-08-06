@@ -124,15 +124,16 @@ export default function PakarAturanPage() {
                 <TableHead className="font-bold text-slate-700">Kode Penyakit</TableHead>
                 <TableHead className="font-bold text-slate-700">Tipe Aturan</TableHead>
                 <TableHead className="font-bold text-slate-700">Kode Pertanyaan</TableHead>
-                <TableHead className="font-bold text-slate-700 text-center">Minimal Jawaban</TableHead>
+                <TableHead className="font-bold text-slate-700 text-center">Min. Jawaban</TableHead>
                 <TableHead className="font-bold text-slate-700">Sifat</TableHead>
+                <TableHead className="font-bold text-slate-700 text-center">Lintas Tingkat</TableHead>
                 <TableHead className="text-right font-bold text-slate-700 pr-6">Aksi</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loadingInitial ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="h-40 text-center text-slate-400">
+                  <TableCell colSpan={8} className="h-40 text-center text-slate-400">
                     <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3" />
                     Memuat data aturan...
                   </TableCell>
@@ -174,6 +175,15 @@ export default function PakarAturanPage() {
                         </span>
                       )}
                     </TableCell>
+                    <TableCell className="text-center">
+                      {aturan.berlaku_untuk_semua_tingkat ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-black rounded-full bg-purple-50 text-purple-700 border border-purple-100">
+                          <ShieldCheck className="w-3 h-3" /> Ya
+                        </span>
+                      ) : (
+                        <span className="text-slate-300 text-xs">—</span>
+                      )}
+                    </TableCell>
                     <TableCell className="text-right pr-6">
                       <div className="flex justify-end gap-1">
                         <Link href={`/pakar/basisdata/aturan/edit/${aturan.aturan_uid}`}>
@@ -190,7 +200,7 @@ export default function PakarAturanPage() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-20 text-slate-400 font-medium italic">
+                  <TableCell colSpan={8} className="text-center py-20 text-slate-400 font-medium italic">
                     Belum ada data aturan yang tersedia.
                   </TableCell>
                 </TableRow>

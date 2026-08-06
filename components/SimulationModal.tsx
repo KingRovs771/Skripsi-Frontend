@@ -120,6 +120,18 @@ export default function SimulationModal({ isOpen, onClose, onConfirm, draftRule 
                 {Number(draftRule.is_mandatory) === 1 ? 'Wajib' : 'Opsional'}
               </span>
             </div>
+            <div className="col-span-2 pt-1 border-t border-slate-200 flex items-center gap-2">
+              <span className="text-slate-400">Tipe Aturan:</span>
+              {draftRule.tipe_aturan === 'RED_FLAG' ? (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-black rounded-full bg-red-50 text-red-700 border border-red-100">
+                  🚩 Red Flag — Berlaku Lintas Semua Tingkat
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-black rounded-full bg-blue-50 text-blue-700 border border-blue-100">
+                  Gejala Inti — Satu Kelas Penyakit
+                </span>
+              )}
+            </div>
           </div>
 
           {/* Sample Selector */}

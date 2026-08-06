@@ -240,6 +240,9 @@ export default function EditPenyakitPage() {
                   value={formData.min_skor}
                   onChange={handleChange('min_skor')}
                 />
+                <p className="text-xs text-slate-400">
+                  PHQ-9: 0–27 &bull; GAD-7: 0–21. Sesuaikan dengan skala tes yang digunakan.
+                </p>
                 {errors.min_skor && (
                   <p className="text-xs text-red-500 flex items-center gap-1 mt-1">
                     <AlertCircle className="w-3 h-3" /> {errors.min_skor}
@@ -261,6 +264,9 @@ export default function EditPenyakitPage() {
                   value={formData.max_skor}
                   onChange={handleChange('max_skor')}
                 />
+                <p className="text-xs text-slate-400">
+                  Contoh: PHQ-9 maks = 27, GAD-7 maks = 21. Harus &ge; Minimal Skor.
+                </p>
                 {errors.max_skor && (
                   <p className="text-xs text-red-500 flex items-center gap-1 mt-1">
                     <AlertCircle className="w-3 h-3" /> {errors.max_skor}
