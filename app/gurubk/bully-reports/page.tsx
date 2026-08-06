@@ -194,20 +194,21 @@ export default function BullyReportsPage() {
                 <th className="p-4 font-semibold text-slate-500 text-xs uppercase tracking-widest">Jenis</th>
                 <th className="p-4 font-semibold text-slate-500 text-xs uppercase tracking-widest">Urgensi</th>
                 <th className="p-4 font-semibold text-slate-500 text-xs uppercase tracking-widest">Status</th>
+                <th className="p-4 font-semibold text-slate-500 text-xs uppercase tracking-widest">Penyelesaian</th>
                 <th className="p-4 font-semibold text-slate-500 text-xs uppercase tracking-widest text-center">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="p-12 text-center">
+                  <td colSpan={8} className="p-12 text-center">
                     <Loader2 className="w-7 h-7 animate-spin mx-auto text-slate-300" />
                     <p className="text-slate-400 mt-3 text-sm font-medium">Memuat laporan...</p>
                   </td>
                 </tr>
               ) : reports.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="p-12 text-center">
+                  <td colSpan={8} className="p-12 text-center">
                     <ShieldAlert className="w-10 h-10 mx-auto text-slate-200 mb-3" />
                     <p className="text-slate-500 font-semibold">
                       {hasFilter ? 'Tidak ada laporan yang cocok.' : 'Belum ada laporan bully masuk.'}
@@ -245,6 +246,21 @@ export default function BullyReportsPage() {
                     <td className="p-4 text-slate-600 text-sm">{r.jenis_bully}</td>
                     <td className="p-4"><UrgensiBadge urgensi={r.tingkat_urgensi} /></td>
                     <td className="p-4"><StatusBadge status={r.status} /></td>
+                    <td className="p-4">
+                      {r.status === 'SELESAI' ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          Selesai
+                        </span>
+                      ) : r.status === 'DITOLAK' ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-50 text-slate-500 border border-slate-200">
+                          Ditolak
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200 animate-pulse">
+                          Belum Selesai
+                        </span>
+                      )}
+                    </td>
                     <td className="p-4 text-center">
                       <Link href={`/gurubk/bully-reports/${r.report_uid}`}>
                         <button
@@ -279,6 +295,13 @@ export default function BullyReportsPage() {
                       <div className="flex items-center gap-2 flex-wrap mb-1">
                         <UrgensiBadge urgensi={r.tingkat_urgensi} />
                         <StatusBadge status={r.status} />
+                        {r.status === 'SELESAI' ? (
+                          <span className="inline-flex px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-100">Selesai</span>
+                        ) : r.status === 'DITOLAK' ? (
+                          <span className="inline-flex px-2 py-0.5 rounded text-[10px] font-bold bg-slate-50 text-slate-500 border border-slate-100">Ditolak</span>
+                        ) : (
+                          <span className="inline-flex px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-100 animate-pulse">Belum Selesai</span>
+                        )}
                         {!r.notifikasi_terkirim && (
                           <span className="text-xs text-amber-600 font-bold flex items-center gap-0.5">
                             <WifiOff className="w-3 h-3" /> Notif gagal

@@ -200,12 +200,20 @@ export default function LaporBullyPage() {
           <p className="text-xs text-slate-400 font-mono mb-1">Nomor Referensi Laporan</p>
           <p className="font-mono text-sm text-slate-700 break-all">{reportUID}</p>
         </div>
-        <button
-          onClick={() => router.push('/student/home')}
-          className="w-full py-3 bg-slate-900 text-white rounded-xl font-semibold hover:bg-slate-700 transition-colors"
-        >
-          Kembali ke Dashboard
-        </button>
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            onClick={() => router.push('/student/lapor-bully/riwayat')}
+            className="py-3 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 transition-colors"
+          >
+            Lihat Riwayat Laporan
+          </button>
+          <button
+            onClick={() => router.push('/student/home')}
+            className="py-3 border border-slate-200 text-slate-700 rounded-xl font-semibold hover:bg-slate-50 transition-colors"
+          >
+            Dashboard
+          </button>
+        </div>
       </div>
     );
   }
@@ -314,16 +322,25 @@ export default function LaporBullyPage() {
   return (
     <div className="max-w-2xl mx-auto space-y-8">
       {/* Header */}
-      <div>
-        <p className="text-sm font-semibold text-slate-400 uppercase tracking-widest mb-1">Siswa</p>
-        <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-3">
-          <ShieldAlert className="w-8 h-8 text-red-500" />
-          Laporkan Bully
-        </h1>
-        <p className="text-slate-500 mt-2 leading-relaxed">
-          Laporanmu akan diterima oleh Guru BK sekolahmu. Kamu bisa memilih untuk tetap anonim
-          — identitasmu tidak akan ditampilkan kepada siapa pun.
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-4 border-b border-slate-100">
+        <div className="flex-1">
+          <p className="text-sm font-semibold text-slate-400 uppercase tracking-widest mb-1">Siswa</p>
+          <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-3">
+            <ShieldAlert className="w-8 h-8 text-red-500" />
+            Laporkan Bully
+          </h1>
+          <p className="text-slate-500 mt-2 leading-relaxed text-sm">
+            Laporanmu akan diterima oleh Guru BK sekolahmu. Kamu bisa memilih untuk tetap anonim
+            — identitasmu tidak akan ditampilkan kepada siapa pun.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => router.push('/student/lapor-bully/riwayat')}
+          className="self-start sm:self-center py-2.5 px-4 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold rounded-xl border border-indigo-200 transition-colors shrink-0"
+        >
+          Lihat Riwayat Laporan
+        </button>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
