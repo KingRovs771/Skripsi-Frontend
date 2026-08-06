@@ -37,7 +37,7 @@ export default function CreatePenyakitPage() {
     max_skor: 27,
   });
 
-  const [errors, setErrors] = useState<Partial<typeof formData>>({});
+  const [errors, setErrors] = useState<Partial<Record<keyof typeof formData, string>>>({});
 
   // AUTO-GENERATE KODE PENYAKIT
   const generateKode = async () => {
@@ -63,7 +63,7 @@ export default function CreatePenyakitPage() {
 
   // CLIENT-SIDE VALIDATION
   const validate = (): boolean => {
-    const newErrors: Partial<typeof formData> = {};
+    const newErrors: Partial<Record<keyof typeof formData, string>> = {};
 
     if (!formData.kode_penyakit.trim()) {
       newErrors.kode_penyakit = 'Kode penyakit wajib diisi.';

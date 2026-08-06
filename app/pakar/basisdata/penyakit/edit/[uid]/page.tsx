@@ -27,7 +27,7 @@ export default function EditPenyakitPage() {
     max_skor: 27,
   });
 
-  const [errors, setErrors] = useState<Partial<typeof formData>>({});
+  const [errors, setErrors] = useState<Partial<Record<keyof typeof formData, string>>>({});
 
   // ── PREFILL DATA DARI API ──
   useEffect(() => {
@@ -76,7 +76,7 @@ export default function EditPenyakitPage() {
 
   // ── VALIDASI CLIENT-SIDE ──
   const validate = (): boolean => {
-    const newErrors: Partial<typeof formData> = {};
+    const newErrors: Partial<Record<keyof typeof formData, string>> = {};
 
     if (!formData.nama_penyakit.trim()) {
       newErrors.nama_penyakit = 'Nama penyakit wajib diisi.';
