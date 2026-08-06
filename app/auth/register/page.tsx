@@ -43,6 +43,18 @@ export default function RegisterPage() {
   // ── State Role (hidden) ───────────────────────────────────
   const [studentRoleUid, setStudentRoleUid] = useState<string>('');
 
+  // ── State Dropdown Kelas ───────────────────────────────────
+  const [kelasRomawi, setKelasRomawi] = useState('');
+  const [kelasAbjad, setKelasAbjad] = useState('');
+
+  useEffect(() => {
+    if (kelasRomawi && kelasAbjad) {
+      setFormData((prev) => ({ ...prev, kelas: `${kelasRomawi}-${kelasAbjad}` }));
+    } else {
+      setFormData((prev) => ({ ...prev, kelas: '' }));
+    }
+  }, [kelasRomawi, kelasAbjad]);
+
   // Fetch role student dari backend saat mount (tidak ditampilkan ke user)
   useEffect(() => {
     const fetchStudentRole = async () => {
@@ -351,13 +363,32 @@ export default function RegisterPage() {
 
               <div className="grid gap-2">
                 <Label htmlFor="kelas">Kelas</Label>
-                <Input
-                  id="kelas"
-                  placeholder="Contoh: XII MIPA 1"
-                  required
-                  value={formData.kelas}
-                  onChange={set('kelas')}
-                />
+                <div className="grid grid-cols-2 gap-2">
+                  <select
+                    id="kelasRomawi"
+                    required
+                    value={kelasRomawi}
+                    onChange={(e) => setKelasRomawi(e.target.value)}
+                    className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring text-foreground"
+                  >
+                    <option value="">Tingkat</option>
+                    {['VII', 'VIII', 'IX', 'X', 'XI', 'XII'].map((r) => (
+                      <option key={r} value={r}>{r}</option>
+                    ))}
+                  </select>
+                  <select
+                    id="kelasAbjad"
+                    required
+                    value={kelasAbjad}
+                    onChange={(e) => setKelasAbjad(e.target.value)}
+                    className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring text-foreground"
+                  >
+                    <option value="">Grup / Abjad</option>
+                    {Array.from({ length: 26 }, (_, i) => String.fromCharCode(65 + i)).map((a) => (
+                      <option key={a} value={a}>{a}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </div>
           </div>

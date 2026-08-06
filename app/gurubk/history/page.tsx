@@ -3,9 +3,10 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import {
   Search, Eye, FileClock, Loader2, Users, AlertCircle,
-  ChevronRight, Filter, X, Brain, Activity
+  ChevronRight, Filter, X, Brain, Activity, Upload, Download, CheckCircle2
 } from 'lucide-react';
 import { fetchApi } from '@/lib/api';
+import { toast } from 'sonner';
 
 interface StudentHistory {
   nisn: string;
@@ -55,6 +56,65 @@ export default function GurubkHistoryPage() {
   const [students, setStudents]             = useState<StudentHistory[]>([]);
   const [loading, setLoading]               = useState(true);
   const [error, setError]                   = useState<string | null>(null);
+
+  // ── Import Siswa States ────────────────────────────────────
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importingFile, setImportingFile]     = useState(false);
+  const [selectedFile, setSelectedFile]       = useState<File | null>(null);
+  const [importResult, setImportResult]       = useState<{
+    inserted: number;
+    failed: number;
+    errors: string[];
+  } | null>(null);
+
+  const downloadCSVTemplate = () => {
+    const headers = 'nisn,nama_lengkap,no_hp,alamat,kelas,email,password\n';
+    const sampleRow = '1234567890,Ahmad Fauzi,08123456789,Jl. Mawar No. 12,XII-A,ahmad@sekolah.sch.id,Siswa123!\n';
+    const blob = new Blob([headers + sampleRow], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'template_import_siswa.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleImportSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedFile) return;
+
+    setImportingFile(true);
+    setImportResult(null);
+
+    const formData = new FormData();
+    formData.append('file', selectedFile);
+
+    try {
+      const res = await fetchApi('/api/gurubk/history/import-students', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const json = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setImportResult({
+          inserted: json.inserted || 0,
+          failed: json.failed || 0,
+          errors: json.errors || [],
+        });
+        toast.success('Proses import selesai!');
+        fetchHistory(); // refresh list
+      } else {
+        toast.error(json.error || 'Gagal mengupload file import');
+      }
+    } catch {
+      toast.error('Tidak dapat menghubungi server');
+    } finally {
+      setImportingFile(false);
+    }
+  };
 
   const fetchHistory = useCallback(async () => {
     setLoading(true);
@@ -112,9 +172,22 @@ export default function GurubkHistoryPage() {
             Pantau hasil diagnosis dan tinjau ulang visibilitas hasil kepada siswa.
           </p>
         </div>
-        <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-slate-600 text-sm font-semibold shadow-sm">
-          <Users className="w-4 h-4 text-slate-400" />
-          {loading ? '...' : `${filteredStudents.length} / ${students.length} Siswa`}
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={() => {
+              setSelectedFile(null);
+              setImportResult(null);
+              setShowImportModal(true);
+            }}
+            className="flex items-center gap-2 py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm shadow-indigo-600/10 active:scale-95 shrink-0"
+          >
+            <Upload className="w-4 h-4" /> Import Siswa (CSV)
+          </button>
+          <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-slate-600 text-sm font-semibold shadow-sm">
+            <Users className="w-4 h-4 text-slate-400" />
+            {loading ? '...' : `${filteredStudents.length} / ${students.length} Siswa`}
+          </div>
         </div>
       </div>
 
@@ -364,6 +437,152 @@ export default function GurubkHistoryPage() {
           )}
         </div>
       </div>
+
+      {/* Modal Import Siswa */}
+      {showImportModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-3xl shadow-2xl border border-slate-100 w-full max-w-lg overflow-hidden flex flex-col max-h-[85vh] transition-all">
+            {/* Header */}
+            <div className="bg-slate-900 text-white px-6 py-4 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Upload className="w-5 h-5 text-white/80" />
+                <h3 className="font-black text-base tracking-tight">Import Data Siswa</h3>
+              </div>
+              <button
+                onClick={() => setShowImportModal(false)}
+                className="text-white/70 hover:text-white hover:bg-white/10 p-1.5 rounded-full transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <form onSubmit={handleImportSubmit} className="p-6 overflow-y-auto flex-1 space-y-6">
+              {/* Panduan */}
+              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 text-xs space-y-2 leading-relaxed text-slate-600">
+                <p className="font-bold text-slate-900 text-sm">Panduan Import CSV:</p>
+                <ul className="list-disc pl-4 space-y-1">
+                  <li>Format file harus berupa <b>CSV (.csv)</b> menggunakan pemisah koma.</li>
+                  <li>Header kolom wajib di baris pertama: <b>nisn, nama_lengkap, email</b>.</li>
+                  <li>Kolom opsional: <b>no_hp, alamat, kelas, password</b>.</li>
+                  <li>Jika password dikosongkan, default password adalah <b>Siswa123!</b></li>
+                  <li>Siswa yang diimport otomatis terdaftar di bawah sekolah Anda.</li>
+                </ul>
+                <button
+                  type="button"
+                  onClick={downloadCSVTemplate}
+                  className="mt-2 inline-flex items-center gap-1.5 text-xs text-indigo-700 hover:text-indigo-900 font-bold border-b border-indigo-200 hover:border-indigo-950 transition-colors"
+                >
+                  <Download className="w-3.5 h-3.5" /> Download Template CSV
+                </button>
+              </div>
+
+              {/* Uploader */}
+              {!importResult && (
+                <div className="space-y-4">
+                  <div className="grid gap-2">
+                    <label className="text-sm font-semibold text-slate-700">Pilih File CSV</label>
+                    <input
+                      type="file"
+                      accept=".csv"
+                      required
+                      disabled={importingFile}
+                      onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                      className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200"
+                    />
+                  </div>
+
+                  {selectedFile && (
+                    <div className="text-xs font-semibold text-slate-500 bg-slate-50 border border-slate-100 p-3 rounded-xl flex items-center justify-between">
+                      <span className="truncate">{selectedFile.name}</span>
+                      <span>{(selectedFile.size / 1024).toFixed(1)} KB</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Hasil Import */}
+              {importResult && (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-4 text-center">
+                      <p className="text-[10px] font-black text-emerald-600 uppercase tracking-wider">Sukses Diimport</p>
+                      <p className="text-3xl font-black text-emerald-800 mt-1">{importResult.inserted}</p>
+                    </div>
+                    <div className="bg-red-50 border border-red-100 rounded-2xl p-4 text-center">
+                      <p className="text-[10px] font-black text-red-600 uppercase tracking-wider">Gagal / Dilewati</p>
+                      <p className="text-3xl font-black text-red-800 mt-1">{importResult.failed}</p>
+                    </div>
+                  </div>
+
+                  {importResult.errors.length > 0 && (
+                    <div className="space-y-2">
+                      <p className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                        <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
+                        Log Error / Kendala Laporan
+                      </p>
+                      <div className="border border-slate-200 rounded-xl overflow-hidden max-h-40 overflow-y-auto bg-slate-50 p-3 font-mono text-[10px] text-slate-500 space-y-1.5">
+                        {importResult.errors.map((err, idx) => (
+                          <div key={idx} className="border-b border-slate-150 pb-1.5 last:border-0 last:pb-0">
+                            • {err}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {importResult.failed === 0 && (
+                    <div className="flex items-start gap-3 bg-emerald-50 border border-emerald-100 text-emerald-800 rounded-2xl px-5 py-4">
+                      <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                      <div className="text-xs">
+                        <p className="font-bold">Import Sukses Sempurna!</p>
+                        <p className="text-emerald-700 leading-relaxed mt-0.5">
+                          Seluruh baris siswa di dalam file berhasil diimport ke dalam sistem.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Footer */}
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+                {!importResult ? (
+                  <>
+                    <button
+                      type="button"
+                      disabled={importingFile}
+                      onClick={() => setShowImportModal(false)}
+                      className="px-5 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition-all"
+                    >
+                      Batal
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={importingFile || !selectedFile}
+                      className="bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs px-6 py-2.5 rounded-xl transition-all shadow-sm flex items-center gap-2 disabled:bg-slate-200 disabled:text-slate-400"
+                    >
+                      {importingFile ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                      Mulai Import
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setImportResult(null);
+                      setSelectedFile(null);
+                    }}
+                    className="bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs px-6 py-2.5 rounded-xl transition-all shadow-sm"
+                  >
+                    Import File Lain
+                  </button>
+                )}
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
