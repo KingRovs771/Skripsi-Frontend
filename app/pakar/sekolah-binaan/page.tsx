@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { fetchApi } from '@/lib/api';
 import { toast } from 'sonner';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -229,6 +230,66 @@ export default function PakarSekolahBinaanPage() {
           </div>
         ))}
       </div>
+
+      {/* ── Grafik Sekolah Binaan ── */}
+      {!loading && schools.length > 0 && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Chart 1: Partisipasi */}
+          <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm">
+            <div className="mb-4">
+              <h3 className="text-base font-bold text-slate-900">Partisipasi &amp; Total Siswa</h3>
+              <p className="text-xs text-slate-500">Perbandingan jumlah siswa terdaftar dan tes yang diselesaikan per sekolah binaan.</p>
+            </div>
+            <div className="h-72 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={schools.map(s => ({
+                  name: s.nama_sekolah.length > 15 ? s.nama_sekolah.substring(0, 15) + '...' : s.nama_sekolah,
+                  "Total Siswa": s.total_siswa,
+                  "Tes Selesai": s.total_tes_selesai,
+                }))}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
+                  <XAxis dataKey="name" stroke="#64748B" fontSize={10} tickLine={false} axisLine={false} />
+                  <YAxis stroke="#64748B" fontSize={10} tickLine={false} axisLine={false} />
+                  <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                  <Legend iconType="circle" wrapperStyle={{ fontSize: '11px' }} />
+                  <Bar dataKey="Total Siswa" fill="#3B82F6" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="Tes Selesai" fill="#10B981" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Chart 2: Butuh Perhatian */}
+          <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm">
+            <div className="mb-4">
+              <h3 className="text-base font-bold text-slate-900">Kasus Butuh Perhatian (Skor &gt; 75)</h3>
+              <p className="text-xs text-slate-500">Jumlah siswa terindikasi mengalami depresi/kecemasan sedang-berat per sekolah binaan.</p>
+            </div>
+            <div className="h-72 w-full">
+              {totalButuhPerhatian > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={schools.map(s => ({
+                    name: s.nama_sekolah.length > 15 ? s.nama_sekolah.substring(0, 15) + '...' : s.nama_sekolah,
+                    "Butuh Perhatian": s.butuh_perhatian,
+                  }))}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
+                    <XAxis dataKey="name" stroke="#64748B" fontSize={10} tickLine={false} axisLine={false} />
+                    <YAxis stroke="#64748B" fontSize={10} tickLine={false} axisLine={false} />
+                    <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                    <Legend iconType="circle" wrapperStyle={{ fontSize: '11px' }} />
+                    <Bar dataKey="Butuh Perhatian" fill="#EF4444" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-full flex items-center justify-center text-slate-400 text-xs font-semibold">
+                  Tidak ada kasus yang butuh perhatian di seluruh sekolah binaan Anda.
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
 
       {/* ── Alert jika ada yang butuh perhatian ── */}
       {!loading && totalButuhPerhatian > 0 && (
